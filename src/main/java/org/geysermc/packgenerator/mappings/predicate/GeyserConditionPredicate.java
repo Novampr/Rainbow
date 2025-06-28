@@ -8,27 +8,27 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
-public record GeyserConditionPredicate(ConditionProperty property, boolean expected) implements GeyserPredicate {
+public record GeyserConditionPredicate(Property property, boolean expected) implements GeyserPredicate {
 
     public static final MapCodec<GeyserConditionPredicate> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
-                    ConditionProperty.CODEC.forGetter(GeyserConditionPredicate::property),
+                    Property.CODEC.forGetter(GeyserConditionPredicate::property),
                     Codec.BOOL.optionalFieldOf("expected", true).forGetter(GeyserConditionPredicate::expected)
             ).apply(instance, GeyserConditionPredicate::new)
     );
 
-    public static final ConditionProperty BROKEN = unit(ConditionProperty.Type.BROKEN);
-    public static final ConditionProperty DAMAGED = unit(ConditionProperty.Type.DAMAGED);
-    public static final ConditionProperty FISHING_ROD_CAST = unit(ConditionProperty.Type.FISHING_ROD_CAST);
+    public static final Property BROKEN = unit(Property.Type.BROKEN);
+    public static final Property DAMAGED = unit(Property.Type.DAMAGED);
+    public static final Property FISHING_ROD_CAST = unit(Property.Type.FISHING_ROD_CAST);
 
     @Override
     public Type type() {
         return Type.CONDITION;
     }
 
-    public interface ConditionProperty {
+    public interface Property {
 
-        MapCodec<ConditionProperty> CODEC = Type.CODEC.dispatchMap("property", ConditionProperty::type, Type::codec);
+        MapCodec<Property> CODEC = Type.CODEC.dispatchMap("property", Property::type, Type::codec);
 
         Type type();
 
@@ -42,14 +42,14 @@ public record GeyserConditionPredicate(ConditionProperty property, boolean expec
             public static final Codec<Type> CODEC = StringRepresentable.fromEnum(Type::values);
 
             private final String name;
-            private final MapCodec<? extends ConditionProperty> codec;
+            private final MapCodec<? extends Property> codec;
 
-            Type(String name, MapCodec<? extends ConditionProperty> codec) {
+            Type(String name, MapCodec<? extends Property> codec) {
                 this.name = name;
                 this.codec = codec;
             }
 
-            public MapCodec<? extends ConditionProperty> codec() {
+            public MapCodec<? extends Property> codec() {
                 return codec;
             }
 
@@ -60,7 +60,7 @@ public record GeyserConditionPredicate(ConditionProperty property, boolean expec
         }
     }
 
-    public record CustomModelData(int index) implements ConditionProperty {
+    public record CustomModelData(int index) implements Property {
         public static final MapCodec<CustomModelData> CODEC = RecordCodecBuilder.mapCodec(instance ->
                 instance.group(
                         ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("index", 0).forGetter(CustomModelData::index)
@@ -73,7 +73,7 @@ public record GeyserConditionPredicate(ConditionProperty property, boolean expec
         }
     }
 
-    public record HasComponent(DataComponentType<?> component) implements ConditionProperty {
+    public record HasComponent(DataComponentType<?> component) implements Property {
         public static final MapCodec<HasComponent> CODEC = RecordCodecBuilder.mapCodec(instance ->
                 instance.group(
                         DataComponentType.CODEC.fieldOf("component").forGetter(HasComponent::component)
@@ -86,7 +86,7 @@ public record GeyserConditionPredicate(ConditionProperty property, boolean expec
         }
     }
 
-    private static ConditionProperty unit(ConditionProperty.Type type) {
+    private static Property unit(Property.Type type) {
         return () -> type;
     }
 }
