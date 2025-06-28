@@ -17,6 +17,7 @@ import org.geysermc.packgenerator.mappings.GeyserMappings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 public final class PackManager {
@@ -55,6 +56,7 @@ public final class PackManager {
         ResourceLocation model = patchedModel.get();
         String displayName = stack.getHoverName().getString();
         GeyserMapping mapping = new GeyserMapping(model, model, Optional.of(displayName),
+                List.of(),
                 new GeyserMapping.BedrockOptions(Optional.empty(), true, false, 0),
                 stack.getComponentsPatch());
         mappings.map(stack.getItemHolder(), mapping);
