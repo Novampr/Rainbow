@@ -7,18 +7,13 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.serialization.JsonOps;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import org.geysermc.packgenerator.mappings.GeyserMapping;
 import org.geysermc.packgenerator.mappings.GeyserMappings;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
 
 public final class PackManager {
     public static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir()
@@ -44,24 +39,16 @@ public final class PackManager {
     public boolean map(ItemStack stack, boolean throwOnModelMissing) throws CommandSyntaxException {
         ensurePackIsCreated();
 
-        Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
-        //noinspection OptionalAssignedToNull - annoying Mojang
-        if (patchedModel == null || patchedModel.isEmpty()) {
+        try {
+            mappings.map(stack);
+            return true;
+        } catch (IllegalArgumentException exception) {
             if (throwOnModelMissing) {
                 throw new SimpleCommandExceptionType(Component.literal("Item stack does not have a custom model")).create();
+            } else {
+                return false;
             }
-            return false;
         }
-
-        ResourceLocation model = patchedModel.get();
-        String displayName = stack.getHoverName().getString();
-        GeyserMapping mapping = new GeyserMapping(model, model, Optional.of(displayName),
-                List.of(),
-                new GeyserMapping.BedrockOptions(Optional.empty(), true, false, 0),
-                stack.getComponentsPatch());
-        mappings.map(stack.getItemHolder(), mapping);
-
-        return true;
     }
 
     public void finish() throws CommandSyntaxException {

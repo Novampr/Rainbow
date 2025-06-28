@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-// TODO predicates, etc.
+// TODO other keys, etc.
 public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIdentifier, Optional<String> displayName,
                             List<GeyserPredicate> predicates, BedrockOptions bedrockOptions, DataComponentPatch components) {
     private static final List<DataComponentType<?>> SUPPORTED_COMPONENTS = List.of(DataComponents.CONSUMABLE, DataComponents.EQUIPPABLE, DataComponents.FOOD,

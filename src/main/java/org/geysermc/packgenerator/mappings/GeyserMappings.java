@@ -5,13 +5,18 @@ import com.google.common.collect.MultimapBuilder;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
+// TODO group definitions
 public class GeyserMappings {
     private static final Codec<Map<Holder<Item>, Collection<GeyserMapping>>> MAPPINGS_CODEC = Codec.unboundedMap(Item.CODEC, GeyserMapping.CODEC.listOf().xmap(Function.identity(), ArrayList::new));
 
@@ -35,6 +40,21 @@ public class GeyserMappings {
     public void map(Holder<Item> item, GeyserMapping mapping) {
         // TODO conflict detection
         mappings.put(item, mapping);
+    }
+
+    public void map(ItemStack stack) {
+        Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
+        //noinspection OptionalAssignedToNull - annoying Mojang
+        if (patchedModel == null || patchedModel.isEmpty()) {
+            throw new IllegalArgumentException("Item stack does not have a custom model");
+        }
+
+        ResourceLocation model = patchedModel.get();
+        String displayName = stack.getHoverName().getString();
+        int protectionValue = 0; // TODO check the attributes
+
+        GeyserItemMapper.mapItem(model, displayName, protectionValue, stack.getComponentsPatch())
+                .forEach(mapping -> map(stack.getItemHolder(), mapping));
     }
 
     public Map<Holder<Item>, Collection<GeyserMapping>> mappings() {

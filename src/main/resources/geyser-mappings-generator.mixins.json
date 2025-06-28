@@ -4,7 +4,14 @@
   "package": "org.geysermc.packgenerator.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [],
-  "client": [],
+  "client": [
+    "BlockModelWrapperMixin",
+    "BlockModelWrapperMixin$UnbakedMixin",
+    "ConditionalItemModelAccessor",
+    "SelectItemModelAccessor",
+    "SelectItemModelMixin",
+    "SelectItemModelMixin$UnbakedSwitchMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
