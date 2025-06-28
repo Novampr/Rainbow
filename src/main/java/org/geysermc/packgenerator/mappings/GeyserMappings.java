@@ -1,4 +1,4 @@
-package xyz.eclipseisoffline.geyser;
+package org.geysermc.packgenerator.mappings;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;

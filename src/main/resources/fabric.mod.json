@@ -2,16 +2,20 @@
   "schemaVersion": 1,
   "id": "geyser-mappings-generator",
   "version": "${version}",
-  "name": "geyser-mappings-generator",
-  "description": "",
-  "authors": [],
-  "contact": {},
+  "name": "Geyser Mappings Generator",
+  "description": "A mod to generate Geyser mappings (and potentially in the future, full bedrock packs) for use with Geyser's custom item API (v2).",
+  "authors": [
+    "GeyserMC contributors"
+  ],
+  "contact": {
+    "repo": "https://github.com/GeyserMC/geyser-mappings-generator"
+  },
   "license": "MIT",
   "icon": "assets/geyser-mappings-generator/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "xyz.eclipseisoffline.geyser.GeyserMappingsGenerator"
+      "org.geysermc.packgenerator.GeyserMappingsGenerator"
     ]
   },
   "mixins": [

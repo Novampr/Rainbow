@@ -1,4 +1,4 @@
-package xyz.eclipseisoffline.geyser;
+package org.geysermc.packgenerator;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.logging.LogUtils;

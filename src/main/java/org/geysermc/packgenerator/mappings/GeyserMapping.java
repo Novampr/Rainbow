@@ -1,4 +1,4 @@
-package xyz.eclipseisoffline.geyser;
+package org.geysermc.packgenerator.mappings;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

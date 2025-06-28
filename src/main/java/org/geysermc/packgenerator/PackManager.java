@@ -1,4 +1,4 @@
-package xyz.eclipseisoffline.geyser;
+package org.geysermc.packgenerator;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -11,6 +11,8 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import org.geysermc.packgenerator.mappings.GeyserMapping;
+import org.geysermc.packgenerator.mappings.GeyserMappings;
 
 import java.io.IOException;
 import java.nio.file.Files;
