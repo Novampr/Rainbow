@@ -38,7 +38,7 @@ public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIden
                     ResourceLocation.CODEC.fieldOf("model").forGetter(GeyserMapping::model),
                     ResourceLocation.CODEC.fieldOf("bedrock_identifier").forGetter(GeyserMapping::bedrockIdentifier),
                     Codec.STRING.optionalFieldOf("display_name").forGetter(GeyserMapping::displayName),
-                    GeyserPredicate.LIST_CODEC.optionalFieldOf("predicates", List.of()).forGetter(GeyserMapping::predicates),
+                    GeyserPredicate.LIST_CODEC.optionalFieldOf("predicate", List.of()).forGetter(GeyserMapping::predicates),
                     BedrockOptions.CODEC.fieldOf("bedrock_options").forGetter(GeyserMapping::bedrockOptions),
                     FILTERED_COMPONENT_MAP_CODEC.fieldOf("components").forGetter(GeyserMapping::components)
             ).apply(instance, (type, model, bedrockIdentifier, displayName, predicates, bedrockOptions, components)
