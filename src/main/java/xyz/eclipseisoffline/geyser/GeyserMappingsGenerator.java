@@ -16,7 +16,7 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> {
-            dispatcher.register(ClientCommandManager.literal("geyser")
+            dispatcher.register(ClientCommandManager.literal("packgenerator")
                     .then(ClientCommandManager.literal("create")
                             .then(ClientCommandManager.argument("name", StringArgumentType.word())
                                     .executes(context -> {
