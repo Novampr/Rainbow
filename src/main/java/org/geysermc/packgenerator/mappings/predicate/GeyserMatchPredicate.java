@@ -3,10 +3,13 @@ package org.geysermc.packgenerator.mappings.predicate;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.equipment.trim.TrimMaterial;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -28,7 +31,7 @@ public record GeyserMatchPredicate(MatchPredicateData data) implements GeyserPre
 
         enum Type implements StringRepresentable {
             CHARGE_TYPE("charge_type", ChargeType.CODEC),
-            TRIM_MATERIAL("trim_material", TrimMaterial.CODEC),
+            TRIM_MATERIAL("trim_material", TrimMaterialData.CODEC),
             CONTEXT_DIMENSION("context_dimension", ContextDimension.CODEC),
             CUSTOM_MODEL_DATA("custom_model_data", CustomModelData.CODEC);
 
@@ -62,9 +65,8 @@ public record GeyserMatchPredicate(MatchPredicateData data) implements GeyserPre
         }
     }
 
-    // TODO might change into ResourceKey?
-    public record TrimMaterial(ResourceLocation material) implements MatchPredicateData {
-        public static final MapCodec<TrimMaterial> CODEC = simpleCodec(ResourceLocation.CODEC, TrimMaterial::material, TrimMaterial::new);
+    public record TrimMaterialData(ResourceKey<TrimMaterial> material) implements MatchPredicateData {
+        public static final MapCodec<TrimMaterialData> CODEC = simpleCodec(ResourceKey.codec(Registries.TRIM_MATERIAL), TrimMaterialData::material, TrimMaterialData::new);
 
         @Override
         public Type type() {
@@ -72,9 +74,8 @@ public record GeyserMatchPredicate(MatchPredicateData data) implements GeyserPre
         }
     }
 
-    // TODO might change into ResourceKey?
-    public record ContextDimension(ResourceLocation dimension) implements MatchPredicateData {
-        public static final MapCodec<ContextDimension> CODEC = simpleCodec(ResourceLocation.CODEC, ContextDimension::dimension, ContextDimension::new);
+    public record ContextDimension(ResourceKey<Level> level) implements MatchPredicateData {
+        public static final MapCodec<ContextDimension> CODEC = simpleCodec(ResourceKey.codec(Registries.DIMENSION), ContextDimension::level, ContextDimension::new);
 
         @Override
         public Type type() {

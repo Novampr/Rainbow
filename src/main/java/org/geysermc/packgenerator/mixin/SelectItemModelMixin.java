@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.SelectItemModel;
 import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty;
-import org.geysermc.packgenerator.accessor.SelectItemModelCaseAccessor;
+import org.geysermc.packgenerator.accessor.SelectItemModelCasesAccessor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(SelectItemModel.class)
-public abstract class SelectItemModelMixin<T> implements ItemModel, SelectItemModelCaseAccessor<T> {
+public abstract class SelectItemModelMixin<T> implements ItemModel, SelectItemModelCasesAccessor<T> {
 
     @Unique
     private Object2ObjectMap<T, ItemModel> cases;
@@ -35,7 +35,7 @@ public abstract class SelectItemModelMixin<T> implements ItemModel, SelectItemMo
         public void setCases(BakingContext bakingContext, ItemModel model, CallbackInfoReturnable<ItemModel> callbackInfoReturnable,
                              @Local Object2ObjectMap<T, ItemModel> cases) {
             //noinspection unchecked
-            ((SelectItemModelCaseAccessor<T>) callbackInfoReturnable.getReturnValue()).geyser_mappings_generator$setCases(cases);
+            ((SelectItemModelCasesAccessor<T>) callbackInfoReturnable.getReturnValue()).geyser_mappings_generator$setCases(cases);
         }
     }
 }

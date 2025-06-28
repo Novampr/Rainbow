@@ -1,5 +1,6 @@
 package org.geysermc.packgenerator.mappings;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.BlockModelWrapper;
 import net.minecraft.client.renderer.item.ConditionalItemModel;
@@ -16,8 +17,13 @@ import net.minecraft.client.renderer.item.properties.select.ContextDimension;
 import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.equipment.trim.TrimMaterial;
+import net.minecraft.world.level.Level;
 import org.geysermc.packgenerator.accessor.BlockModelWrapperLocationAccessor;
+import org.geysermc.packgenerator.accessor.SelectItemModelCasesAccessor;
 import org.geysermc.packgenerator.mappings.predicate.GeyserConditionPredicate;
 import org.geysermc.packgenerator.mappings.predicate.GeyserMatchPredicate;
 import org.geysermc.packgenerator.mappings.predicate.GeyserPredicate;
@@ -47,7 +53,7 @@ public class GeyserItemMapper {
                 return mapConditionalModel(conditional, context);
             }
             case SelectItemModel<?> select -> {
-                return Stream.of();
+                return mapSelectModel(select, context);
             }
             default -> {}
         }
@@ -78,11 +84,21 @@ public class GeyserItemMapper {
         //noinspection unchecked
         SelectItemModelProperty<T> property = ((SelectItemModelAccessor<T>) model).getProperty();
         Function<T, GeyserMatchPredicate.MatchPredicateData> dataConstructor = switch (property) {
-            case Charge ignored -> t -> new GeyserMatchPredicate.ChargeType(t);
-            case TrimMaterialProperty trimMaterial -> ;
-            case ContextDimension contextDimension -> ;
-            case net.minecraft.client.renderer.item.properties.select.CustomModelDataProperty customModelData -> ; // Why, Mojang?
-        }
+            case Charge ignored -> chargeType -> new GeyserMatchPredicate.ChargeType((CrossbowItem.ChargeType) chargeType);
+            case TrimMaterialProperty ignored -> material -> new GeyserMatchPredicate.TrimMaterialData((ResourceKey<TrimMaterial>) material);
+            case ContextDimension ignored -> dimension -> new GeyserMatchPredicate.ContextDimension((ResourceKey<Level>) dimension);
+            // Why, Mojang?
+            case net.minecraft.client.renderer.item.properties.select.CustomModelDataProperty customModelData -> string -> new GeyserMatchPredicate.CustomModelData((String) string, customModelData.index());
+            default -> throw new UnsupportedOperationException("Unsupported select model property " + property.getClass());
+        };
+
+        //noinspection unchecked
+        Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).geyser_mappings_generator$getCases();
+        return Stream.concat(
+                cases.entrySet().stream()
+                        .flatMap(caze -> mapItem(caze.getValue(), context.with(new GeyserMatchPredicate(dataConstructor.apply(caze.getKey()))))),
+                mapItem(cases.defaultReturnValue(), context)
+        );
     }
 
     private record MappingContext(List<GeyserPredicate> predicateStack, ResourceLocation model, String displayName, int protectionValue, DataComponentPatch componentPatch) {
