@@ -30,8 +30,20 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                     .then(ClientCommandManager.literal("map")
                             .executes(context -> {
                                 ItemStack heldItem = context.getSource().getPlayer().getMainHandItem();
-                                PackManager.getInstance().map(heldItem);
+                                PackManager.getInstance().map(heldItem, true);
                                 context.getSource().sendFeedback(Component.literal("Added held item to Geyser mappings"));
+                                return 0;
+                            })
+                    )
+                    .then(ClientCommandManager.literal("mapinventory")
+                            .executes(context -> {
+                                int mapped = 0;
+                                for (ItemStack stack : context.getSource().getPlayer().getInventory()) {
+                                    if (PackManager.getInstance().map(stack, false)) {
+                                        mapped++;
+                                    }
+                                }
+                                context.getSource().sendFeedback(Component.literal("Mapped " + mapped + " items from your inventory"));
                                 return 0;
                             })
                     )

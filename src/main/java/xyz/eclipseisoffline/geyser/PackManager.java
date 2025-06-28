@@ -1,10 +1,8 @@
 package xyz.eclipseisoffline.geyser;
 
-import com.google.gson.FormattingStyle;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import com.google.gson.stream.JsonWriter;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.serialization.JsonOps;
@@ -14,8 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,13 +38,16 @@ public final class PackManager {
         mappings = new GeyserMappings();
     }
 
-    public void map(ItemStack stack) throws CommandSyntaxException {
+    public boolean map(ItemStack stack, boolean throwOnModelMissing) throws CommandSyntaxException {
         ensurePackIsCreated();
 
         Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
         //noinspection OptionalAssignedToNull - annoying Mojang
         if (patchedModel == null || patchedModel.isEmpty()) {
-            throw new SimpleCommandExceptionType(Component.literal("Item stack does not have a custom model")).create();
+            if (throwOnModelMissing) {
+                throw new SimpleCommandExceptionType(Component.literal("Item stack does not have a custom model")).create();
+            }
+            return false;
         }
 
         ResourceLocation model = patchedModel.get();
@@ -56,6 +55,8 @@ public final class PackManager {
                 new GeyserMapping.BedrockOptions(Optional.empty(), true, false, 0),
                 stack.getComponentsPatch().split().added()); // TODO removed components
         mappings.map(stack.getItemHolder(), mapping);
+
+        return true;
     }
 
     public void finish() throws CommandSyntaxException {
