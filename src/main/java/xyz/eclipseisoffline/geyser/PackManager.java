@@ -73,6 +73,8 @@ public final class PackManager {
             GeyserMappingsGenerator.LOGGER.warn("Failed to write Geyser mappings to pack!", exception);
             throw new SimpleCommandExceptionType(Component.literal("Failed to write Geyser mappings to pack!")).create();
         }
+
+        currentPackName = null;
     }
 
     private void ensurePackIsCreated() throws CommandSyntaxException {
