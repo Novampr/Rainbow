@@ -51,9 +51,10 @@ public final class PackManager {
         }
 
         ResourceLocation model = patchedModel.get();
-        GeyserMapping mapping = new GeyserMapping(model, model,
+        String displayName = stack.getHoverName().getString();
+        GeyserMapping mapping = new GeyserMapping(model, model, Optional.of(displayName),
                 new GeyserMapping.BedrockOptions(Optional.empty(), true, false, 0),
-                stack.getComponentsPatch().split().added()); // TODO removed components
+                stack.getComponentsPatch());
         mappings.map(stack.getItemHolder(), mapping);
 
         return true;
