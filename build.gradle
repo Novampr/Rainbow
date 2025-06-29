@@ -74,3 +74,11 @@ publishing {
 
     repositories {}
 }
+
+loom {
+    runs {
+        named("server") {
+            runDir = "run-server"
+        }
+    }
+}

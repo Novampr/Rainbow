@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 // TODO group definitions
@@ -47,7 +48,7 @@ public class GeyserMappings {
         mappings.put(item, mapping);
     }
 
-    public void map(ItemStack stack) {
+    public void map(ItemStack stack, Consumer<GeyserMapping> mappingConsumer) {
         Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
         //noinspection OptionalAssignedToNull - annoying Mojang
         if (patchedModel == null || patchedModel.isEmpty()) {
@@ -59,7 +60,10 @@ public class GeyserMappings {
         int protectionValue = 0; // TODO check the attributes
 
         GeyserItemMapper.mapItem(model, displayName, protectionValue, stack.getComponentsPatch())
-                .forEach(mapping -> map(stack.getItemHolder(), mapping));
+                .forEach(mapping -> {
+                    map(stack.getItemHolder(), mapping);
+                    mappingConsumer.accept(mapping);
+                });
     }
 
     public Map<Holder<Item>, Collection<GeyserMapping>> mappings() {

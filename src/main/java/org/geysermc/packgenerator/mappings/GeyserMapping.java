@@ -45,16 +45,12 @@ public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIden
                     -> new GeyserMapping(model, bedrockIdentifier, displayName, predicates, bedrockOptions, components))
     );
 
-    public record BedrockOptions(Optional<String> icon, boolean allowOffhand, boolean displayHandheld, int protectionValue) {
-        public static final Codec<BedrockOptions> CODEC = RecordCodecBuilder.create(instance ->
-                instance.group(
-                        Codec.STRING.optionalFieldOf("icon").forGetter(BedrockOptions::icon),
-                        Codec.BOOL.optionalFieldOf("allow_offhand", true).forGetter(BedrockOptions::allowOffhand),
-                        Codec.BOOL.optionalFieldOf("display_handheld", false).forGetter(BedrockOptions::displayHandheld),
-                        Codec.INT.optionalFieldOf("protection_value", 0).forGetter(BedrockOptions::protectionValue)
-                ).apply(instance, BedrockOptions::new)
-        );
-        public static final BedrockOptions DEFAULT = new BedrockOptions(Optional.empty(), true, false, 0);
+    public String textureName() {
+        return bedrockOptions.icon.orElse(iconFromResourceLocation(bedrockIdentifier));
+    }
+
+    private static String iconFromResourceLocation(ResourceLocation location) {
+        return location.toString().replace(':', '.').replace('/', '_');
     }
 
     public boolean conflictsWith(GeyserMapping other) {
@@ -71,5 +67,17 @@ public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIden
             return predicatesAreEqual;
         }
         return false;
+    }
+
+    public record BedrockOptions(Optional<String> icon, boolean allowOffhand, boolean displayHandheld, int protectionValue) {
+        public static final Codec<BedrockOptions> CODEC = RecordCodecBuilder.create(instance ->
+                instance.group(
+                        Codec.STRING.optionalFieldOf("icon").forGetter(BedrockOptions::icon),
+                        Codec.BOOL.optionalFieldOf("allow_offhand", true).forGetter(BedrockOptions::allowOffhand),
+                        Codec.BOOL.optionalFieldOf("display_handheld", false).forGetter(BedrockOptions::displayHandheld),
+                        Codec.INT.optionalFieldOf("protection_value", 0).forGetter(BedrockOptions::protectionValue)
+                ).apply(instance, BedrockOptions::new)
+        );
+        public static final BedrockOptions DEFAULT = new BedrockOptions(Optional.empty(), true, false, 0);
     }
 }

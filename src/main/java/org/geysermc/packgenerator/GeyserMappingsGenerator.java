@@ -15,7 +15,7 @@ import java.io.IOException;
 public class GeyserMappingsGenerator implements ClientModInitializer {
 
     public static final String MOD_ID = "geyser-mappings-generator";
-    public static final String NAME = "Geyser Mappings Generator";
+    public static final String MOD_NAME = "Geyser Mappings Generator";
     public static final Logger LOGGER = LogUtils.getLogger();
 
     @Override

@@ -11,6 +11,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Supplier;
 
 public class CodecUtil {
 
@@ -19,10 +20,17 @@ public class CodecUtil {
     public static <O, T> RecordCodecBuilder<O, T> unitVerifyCodec(Codec<T> codec, String field, T value) {
         return codec.validate(read -> {
             if (!read.equals(value)) {
-                return DataResult.error(() -> field + " must equal " + value);
+                return DataResult.error(() -> field + " must equal " + value + ", was " + read);
             }
             return DataResult.success(read);
         }).fieldOf(field).forGetter(object -> value);
+    }
+
+    public static <T> T readOrCompute(Codec<T> codec, Path path, Supplier<T> supplier) throws IOException {
+        if (Files.exists(path)) {
+            return tryReadJson(codec, path);
+        }
+        return supplier.get();
     }
 
     public static <T> T tryReadJson(Codec<T> codec, Path path) throws IOException {
