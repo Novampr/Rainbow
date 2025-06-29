@@ -6,17 +6,21 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.mappings.GeyserMappings;
+import org.geysermc.packgenerator.pack.BedrockVersion;
 import org.geysermc.packgenerator.pack.PackManifest;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Function;
 
 public final class PackManager {
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve("geyser");
-    private static final Function<Path, Path> PACK_DIRECTORY = path -> path.resolve("pack");
+    private static final Path PACK_DIRECTORY = Path.of("pack");
+
+    private static final Path MAPPINGS_FILE = Path.of("geyser_mappings.json");
+    private static final Path MANIFEST_FILE = Path.of("manifest.json");
 
     private static final PackManager INSTANCE = new PackManager();
 
@@ -30,14 +34,14 @@ public final class PackManager {
 
     public void startPack(String name) throws CommandSyntaxException, IOException {
         if (currentPackName != null) {
-            throw new SimpleCommandExceptionType(Component.literal("Already started a pack with name " + currentPackName)).create();
+            throw new SimpleCommandExceptionType(Component.literal("Already started a pack (" + currentPackName + ")")).create();
         }
+
+        exportPath = createPackDirectory(name);
+        packPath = exportPath.resolve(PACK_DIRECTORY);
+        mappings = readOrCreateMappings(exportPath.resolve(MAPPINGS_FILE));
+        manifest = readOrCreateManifest(name, packPath.resolve(MANIFEST_FILE));
         currentPackName = name;
-        exportPath = createPackDirectory(currentPackName);
-        packPath = PACK_DIRECTORY.apply(exportPath);
-        mappings = new GeyserMappings();
-        manifest = new PackManifest(new PackManifest.Header(name, "PLACEHOLDER", UUID.randomUUID(), "PLACEHOLDER"),
-                List.of(new PackManifest.Module(new PackManifest.Header(name, "PLACEHOLDER", UUID.randomUUID(), "PLACEHOLDER"))));
     }
 
     public boolean map(ItemStack stack, boolean throwOnModelMissing) throws CommandSyntaxException {
@@ -58,8 +62,8 @@ public final class PackManager {
     public void finish() throws CommandSyntaxException, IOException {
         ensurePackIsCreated();
 
-        CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve("geyser_mappings.json"));
-        CodecUtil.trySaveJson(PackManifest.CODEC, manifest, packPath.resolve("manifest.json"));
+        CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve(MAPPINGS_FILE));
+        CodecUtil.trySaveJson(PackManifest.CODEC, manifest, packPath.resolve(MANIFEST_FILE));
 
         currentPackName = null;
     }
@@ -74,6 +78,22 @@ public final class PackManager {
         Path path = EXPORT_DIRECTORY.resolve(name);
         CodecUtil.ensureDirectoryExists(path);
         return path;
+    }
+
+    private static GeyserMappings readOrCreateMappings(Path path) throws IOException {
+        if (Files.exists(path)) {
+            return CodecUtil.tryReadJson(GeyserMappings.CODEC, path);
+        }
+        return new GeyserMappings();
+    }
+
+    private static PackManifest readOrCreateManifest(String name, Path path) throws IOException {
+        if (Files.exists(path)) {
+            return CodecUtil.tryReadJson(PackManifest.CODEC, path).increment();
+        }
+        return new PackManifest(
+                new PackManifest.Header(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(1), PackConstants.ENGINE_VERSION),
+                List.of(new PackManifest.Module(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(1))));
     }
 
     public static PackManager getInstance() {

@@ -1,5 +1,6 @@
 package org.geysermc.packgenerator.mappings.predicate;
 
+import com.google.common.base.Suppliers;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -7,6 +8,8 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.function.Supplier;
 
 public record GeyserConditionPredicate(Property property, boolean expected) implements GeyserPredicate {
 
@@ -33,24 +36,24 @@ public record GeyserConditionPredicate(Property property, boolean expected) impl
         Type type();
 
         enum Type implements StringRepresentable {
-            BROKEN("broken", MapCodec.unit(GeyserConditionPredicate.BROKEN)),
-            DAMAGED("damaged", MapCodec.unit(GeyserConditionPredicate.DAMAGED)),
-            CUSTOM_MODEL_DATA("custom_model_data", CustomModelData.CODEC),
-            HAS_COMPONENT("has_component", HasComponent.CODEC),
-            FISHING_ROD_CAST("fishing_rod_cast", MapCodec.unit(GeyserConditionPredicate.FISHING_ROD_CAST));
+            BROKEN("broken", () -> MapCodec.unit(GeyserConditionPredicate.BROKEN)),
+            DAMAGED("damaged", () -> MapCodec.unit(GeyserConditionPredicate.DAMAGED)),
+            CUSTOM_MODEL_DATA("custom_model_data", () -> CustomModelData.CODEC),
+            HAS_COMPONENT("has_component", () -> HasComponent.CODEC),
+            FISHING_ROD_CAST("fishing_rod_cast", () -> MapCodec.unit(GeyserConditionPredicate.FISHING_ROD_CAST));
 
             public static final Codec<Type> CODEC = StringRepresentable.fromEnum(Type::values);
 
             private final String name;
-            private final MapCodec<? extends Property> codec;
+            private final Supplier<MapCodec<? extends Property>> codec;
 
-            Type(String name, MapCodec<? extends Property> codec) {
+            Type(String name, Supplier<MapCodec<? extends Property>> codec) {
                 this.name = name;
-                this.codec = codec;
+                this.codec = Suppliers.memoize(codec::get);
             }
 
             public MapCodec<? extends Property> codec() {
-                return codec;
+                return codec.get();
             }
 
             @Override

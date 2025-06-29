@@ -20,25 +20,41 @@ public record PackManifest(Header header, List<Module> modules) {
             ).apply(instance, (formatVersion, header, modules) -> new PackManifest(header, modules))
     );
 
-    public record Header(String name, String description, UUID uuid, String version) {
+    public PackManifest increment() {
+        return new PackManifest(header.increment(), modules.stream().map(Module::increment).toList());
+    }
+
+    public record Header(String name, String description, UUID uuid, BedrockVersion version, BedrockVersion minEngineVersion) {
         public static final MapCodec<Header> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
                 instance.group(
                         Codec.STRING.fieldOf("name").forGetter(Header::name),
                         Codec.STRING.fieldOf("description").forGetter(Header::description),
                         UUIDUtil.STRING_CODEC.fieldOf("uuid").forGetter(Header::uuid),
-                        Codec.STRING.fieldOf("version").forGetter(Header::version)
+                        BedrockVersion.CODEC.fieldOf("version").forGetter(Header::version),
+                        BedrockVersion.CODEC.fieldOf("min_engine_version").forGetter(Header::minEngineVersion)
                 ).apply(instance, Header::new)
         );
         public static final Codec<Header> CODEC = MAP_CODEC.codec();
+
+        public Header increment() {
+            return new Header(name, description, uuid, version.increment(), minEngineVersion);
+        }
     }
 
-    public record Module(Header header) {
+    public record Module(String name, String description, UUID uuid, BedrockVersion version) {
         public static final Codec<Module> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         CodecUtil.unitVerifyCodec(Codec.STRING, "type", "resources"),
-                        Header.MAP_CODEC.forGetter(Module::header)
-                ).apply(instance, (type, header) -> new Module(header))
+                        Codec.STRING.fieldOf("name").forGetter(Module::name),
+                        Codec.STRING.fieldOf("description").forGetter(Module::description),
+                        UUIDUtil.STRING_CODEC.fieldOf("uuid").forGetter(Module::uuid),
+                        BedrockVersion.CODEC.fieldOf("version").forGetter(Module::version)
+                ).apply(instance, (type, name, description, uuid, version) -> new Module(name, description, uuid, version))
         );
+
+        public Module increment() {
+            return new Module(name, description, uuid, version.increment());
+        }
     }
 }
 

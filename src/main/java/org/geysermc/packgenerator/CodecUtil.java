@@ -3,12 +3,10 @@ package org.geysermc.packgenerator;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.network.chat.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,6 +25,17 @@ public class CodecUtil {
         }).fieldOf(field).forGetter(object -> value);
     }
 
+    public static <T> T tryReadJson(Codec<T> codec, Path path) throws IOException {
+        try {
+            String raw = Files.readString(path);
+            JsonElement json = GSON.fromJson(raw, JsonElement.class);
+            return codec.parse(JsonOps.INSTANCE, json).getOrThrow();
+        } catch (IOException exception) {
+            GeyserMappingsGenerator.LOGGER.warn("Failed to read JSON file {}!", path, exception);
+            throw exception;
+        }
+    }
+
     public static <T> void trySaveJson(Codec<T> codec, T object, Path path) throws IOException {
         JsonElement json = codec.encodeStart(JsonOps.INSTANCE, object).getOrThrow();
 
@@ -34,7 +43,7 @@ public class CodecUtil {
             ensureDirectoryExists(path.getParent());
             Files.writeString(path, GSON.toJson(json));
         } catch (IOException exception) {
-            GeyserMappingsGenerator.LOGGER.warn("Failed to write file " + path + "!", exception);
+            GeyserMappingsGenerator.LOGGER.warn("Failed to write file {}!", path, exception);
             throw exception;
         }
     }
