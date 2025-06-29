@@ -34,13 +34,13 @@ public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIden
 
     public static final Codec<GeyserMapping> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
-                    Codec.STRING.fieldOf("type").forGetter(mapping -> "definition"),
+                    Codec.STRING.fieldOf("type").forGetter(mapping -> "definition"), // TODO
                     ResourceLocation.CODEC.fieldOf("model").forGetter(GeyserMapping::model),
                     ResourceLocation.CODEC.fieldOf("bedrock_identifier").forGetter(GeyserMapping::bedrockIdentifier),
                     Codec.STRING.optionalFieldOf("display_name").forGetter(GeyserMapping::displayName),
                     GeyserPredicate.LIST_CODEC.optionalFieldOf("predicate", List.of()).forGetter(GeyserMapping::predicates),
-                    BedrockOptions.CODEC.fieldOf("bedrock_options").forGetter(GeyserMapping::bedrockOptions),
-                    FILTERED_COMPONENT_MAP_CODEC.fieldOf("components").forGetter(GeyserMapping::components)
+                    BedrockOptions.CODEC.optionalFieldOf("bedrock_options", BedrockOptions.DEFAULT).forGetter(GeyserMapping::bedrockOptions),
+                    FILTERED_COMPONENT_MAP_CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(GeyserMapping::components)
             ).apply(instance, (type, model, bedrockIdentifier, displayName, predicates, bedrockOptions, components)
                     -> new GeyserMapping(model, bedrockIdentifier, displayName, predicates, bedrockOptions, components))
     );
@@ -54,6 +54,7 @@ public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIden
                         Codec.INT.optionalFieldOf("protection_value", 0).forGetter(BedrockOptions::protectionValue)
                 ).apply(instance, BedrockOptions::new)
         );
+        public static final BedrockOptions DEFAULT = new BedrockOptions(Optional.empty(), true, false, 0);
     }
 
     public boolean conflictsWith(GeyserMapping other) {
