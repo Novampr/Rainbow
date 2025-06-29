@@ -55,4 +55,20 @@ public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIden
                 ).apply(instance, BedrockOptions::new)
         );
     }
+
+    public boolean conflictsWith(GeyserMapping other) {
+        if (!model.equals(other.model)) {
+            return false;
+        } else if (predicates.size() == other.predicates.size()) {
+            boolean predicatesAreEqual = true;
+            for (GeyserPredicate predicate : predicates) {
+                if (!other.predicates.contains(predicate)) {
+                    predicatesAreEqual = false;
+                    break;
+                }
+            }
+            return predicatesAreEqual;
+        }
+        return false;
+    }
 }

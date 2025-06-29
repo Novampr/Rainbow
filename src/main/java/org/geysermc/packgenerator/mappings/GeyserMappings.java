@@ -39,7 +39,11 @@ public class GeyserMappings {
     }
 
     public void map(Holder<Item> item, GeyserMapping mapping) {
-        // TODO conflict detection
+        for (GeyserMapping existing : mappings.get(item)) {
+            if (existing.conflictsWith(mapping)) {
+                throw new IllegalArgumentException("Mapping conflicts with existing mapping");
+            }
+        }
         mappings.put(item, mapping);
     }
 
