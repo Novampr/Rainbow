@@ -9,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.geysermc.packgenerator.CodecUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +23,7 @@ public class GeyserMappings {
 
     public static final Codec<GeyserMappings> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
-                    Codec.INT.fieldOf("format_version").forGetter(mappings -> 2),
+                    CodecUtil.unitVerifyCodec(Codec.INT, "format_version", 2),
                     MAPPINGS_CODEC.fieldOf("items").forGetter(GeyserMappings::mappings)
             ).apply(instance, (format, mappings) -> new GeyserMappings(mappings))
     );

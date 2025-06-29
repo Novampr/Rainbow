@@ -1,39 +1,43 @@
 package org.geysermc.packgenerator;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import com.mojang.serialization.JsonOps;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.mappings.GeyserMappings;
+import org.geysermc.packgenerator.pack.PackManifest;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Function;
 
 public final class PackManager {
-    public static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir()
-            .resolve("geyser");
+    private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve("geyser");
+    private static final Function<Path, Path> PACK_DIRECTORY = path -> path.resolve("pack");
 
     private static final PackManager INSTANCE = new PackManager();
 
     private String currentPackName;
     private Path exportPath;
+    private Path packPath;
     private GeyserMappings mappings;
+    private PackManifest manifest;
 
     private PackManager() {}
 
-    public void startPack(String name) throws CommandSyntaxException {
+    public void startPack(String name) throws CommandSyntaxException, IOException {
         if (currentPackName != null) {
             throw new SimpleCommandExceptionType(Component.literal("Already started a pack with name " + currentPackName)).create();
         }
         currentPackName = name;
         exportPath = createPackDirectory(currentPackName);
+        packPath = PACK_DIRECTORY.apply(exportPath);
         mappings = new GeyserMappings();
+        manifest = new PackManifest(new PackManifest.Header(name, "PLACEHOLDER", UUID.randomUUID(), "PLACEHOLDER"),
+                List.of(new PackManifest.Module(new PackManifest.Header(name, "PLACEHOLDER", UUID.randomUUID(), "PLACEHOLDER"))));
     }
 
     public boolean map(ItemStack stack, boolean throwOnModelMissing) throws CommandSyntaxException {
@@ -51,19 +55,11 @@ public final class PackManager {
         }
     }
 
-    public void finish() throws CommandSyntaxException {
+    public void finish() throws CommandSyntaxException, IOException {
         ensurePackIsCreated();
 
-        JsonElement savedMappings = GeyserMappings.CODEC.encodeStart(JsonOps.INSTANCE, mappings)
-                .getOrThrow(error -> new SimpleCommandExceptionType(Component.literal("Failed to encode Geyser mappings! " + error)).create());
-
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        try {
-            Files.writeString(exportPath.resolve("geyser_mappings.json"), gson.toJson(savedMappings));
-        } catch (IOException exception) {
-            GeyserMappingsGenerator.LOGGER.warn("Failed to write Geyser mappings to pack!", exception);
-            throw new SimpleCommandExceptionType(Component.literal("Failed to write Geyser mappings to pack!")).create();
-        }
+        CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve("geyser_mappings.json"));
+        CodecUtil.trySaveJson(PackManifest.CODEC, manifest, packPath.resolve("manifest.json"));
 
         currentPackName = null;
     }
@@ -74,16 +70,9 @@ public final class PackManager {
         }
     }
 
-    private static Path createPackDirectory(String name) throws CommandSyntaxException {
+    private static Path createPackDirectory(String name) throws IOException {
         Path path = EXPORT_DIRECTORY.resolve(name);
-        if (!Files.isDirectory(path)) {
-            try {
-                Files.createDirectories(path);
-            } catch (IOException exception) {
-                GeyserMappingsGenerator.LOGGER.warn("Failed to create pack export directory!", exception);
-                throw new SimpleCommandExceptionType(Component.literal("Failed to create pack export directory for pack " + name)).create();
-            }
-        }
+        CodecUtil.ensureDirectoryExists(path);
         return path;
     }
 

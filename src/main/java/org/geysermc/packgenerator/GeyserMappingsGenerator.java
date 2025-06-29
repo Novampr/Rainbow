@@ -1,6 +1,7 @@
 package org.geysermc.packgenerator;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -8,6 +9,8 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
+
+import java.io.IOException;
 
 public class GeyserMappingsGenerator implements ClientModInitializer {
 
@@ -22,7 +25,11 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                             .then(ClientCommandManager.argument("name", StringArgumentType.word())
                                     .executes(context -> {
                                         String name = StringArgumentType.getString(context, "name");
-                                        PackManager.getInstance().startPack(name);
+                                        try {
+                                            PackManager.getInstance().startPack(name);
+                                        } catch (IOException exception) {
+                                            throw new SimpleCommandExceptionType(Component.literal(exception.getMessage())).create();
+                                        }
                                         context.getSource().sendFeedback(Component.literal("Created pack with name " + name));
                                         return 0;
                                     })
@@ -50,7 +57,11 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                     )
                     .then(ClientCommandManager.literal("finish")
                             .executes(context -> {
-                                PackManager.getInstance().finish();
+                                try {
+                                    PackManager.getInstance().finish();
+                                } catch (IOException exception) {
+                                    throw new SimpleCommandExceptionType(Component.literal(exception.getMessage())).create();
+                                }
                                 context.getSource().sendFeedback(Component.literal("Wrote pack to disk"));
                                 return 0;
                             })
