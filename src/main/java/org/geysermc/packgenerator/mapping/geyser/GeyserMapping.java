@@ -1,4 +1,4 @@
-package org.geysermc.packgenerator.mapping;
+package org.geysermc.packgenerator.mapping.geyser;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -6,7 +6,7 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
-import org.geysermc.packgenerator.mapping.predicate.GeyserPredicate;
+import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserPredicate;
 
 import java.util.List;
 import java.util.Optional;

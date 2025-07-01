@@ -1,4 +1,4 @@
-package org.geysermc.packgenerator.mapping.predicate;
+package org.geysermc.packgenerator.mapping.geyser.predicate;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;

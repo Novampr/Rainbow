@@ -1,4 +1,4 @@
-package org.geysermc.packgenerator.mapping;
+package org.geysermc.packgenerator.mapping.geyser;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;

@@ -4,10 +4,12 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
-import org.geysermc.packgenerator.mappings.GeyserMappings;
+import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
+import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,6 +27,7 @@ public class BedrockPack {
     private final PackManifest manifest;
     private final GeyserMappings mappings;
     private final BedrockTextures.Builder itemTextures;
+    private final List<BedrockAttachable> attachables = new ArrayList<>();
 
     public BedrockPack(String name) throws IOException {
         this.name = name;

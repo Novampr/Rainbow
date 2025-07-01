@@ -1,4 +1,4 @@
-package org.geysermc.packgenerator.mapping;
+package org.geysermc.packgenerator.mapping.geyser;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
@@ -24,9 +24,9 @@ import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
 import org.geysermc.packgenerator.accessor.BlockModelWrapperLocationAccessor;
 import org.geysermc.packgenerator.accessor.SelectItemModelCasesAccessor;
-import org.geysermc.packgenerator.mapping.predicate.GeyserConditionPredicate;
-import org.geysermc.packgenerator.mapping.predicate.GeyserMatchPredicate;
-import org.geysermc.packgenerator.mapping.predicate.GeyserPredicate;
+import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserConditionPredicate;
+import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserMatchPredicate;
+import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserPredicate;
 import org.geysermc.packgenerator.mixin.ConditionalItemModelAccessor;
 import org.geysermc.packgenerator.mixin.SelectItemModelAccessor;
 
