@@ -4,6 +4,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
+import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class BedrockPack {
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve("geyser");
     private static final Path PACK_DIRECTORY = Path.of("pack");
+    private static final Path ATTACHABLES_DIRECTORY = Path.of("attachables");
 
     private static final Path MAPPINGS_FILE = Path.of("geyser_mappings.json");
     private static final Path MANIFEST_FILE = Path.of("manifest.json");
@@ -44,13 +46,19 @@ public class BedrockPack {
     }
 
     public void map(ItemStack stack) {
-        mappings.map(stack, mapping -> itemTextures.withItemTexture(mapping, mapping.bedrockIdentifier().getPath()));
+        mappings.map(stack, mapping -> {
+            itemTextures.withItemTexture(mapping, mapping.bedrockIdentifier().getPath());
+            AttachableMapper.mapItem(stack, mapping.bedrockIdentifier()).ifPresent(attachables::add);
+        });
     }
 
     public void save() throws IOException {
         CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve(MAPPINGS_FILE));
         CodecUtil.trySaveJson(PackManifest.CODEC, manifest, packPath.resolve(MANIFEST_FILE));
         CodecUtil.trySaveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), packPath.resolve(ITEM_ATLAS_FILE));
+        for (BedrockAttachable attachable : attachables) {
+            attachable.save(packPath.resolve(ATTACHABLES_DIRECTORY));
+        }
     }
 
     private static Path createPackDirectory(String name) throws IOException {

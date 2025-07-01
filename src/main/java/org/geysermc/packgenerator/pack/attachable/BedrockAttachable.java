@@ -5,11 +5,15 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.EquipmentSlot;
+import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
+import org.geysermc.packgenerator.mapping.geyser.GeyserMapping;
 import org.geysermc.packgenerator.pack.BedrockTextures;
 import org.geysermc.packgenerator.pack.BedrockVersion;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -37,6 +41,11 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
                 .withGeometry(DisplaySlot.DEFAULT, VanillaGeometries.fromEquipmentSlot(slot))
                 .withRenderController(VanillaRenderControllers.ARMOR)
                 .build();
+    }
+
+    public void save(Path attachablesPath) throws IOException {
+        // Get a save attachable path by using Geyser's way of getting icons
+        CodecUtil.trySaveJson(CODEC, this, attachablesPath.resolve(GeyserMapping.iconFromResourceLocation(info.identifier)));
     }
 
     public static class Builder {

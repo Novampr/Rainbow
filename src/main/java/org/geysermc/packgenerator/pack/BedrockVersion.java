@@ -10,7 +10,7 @@ public record BedrockVersion(int major, int minor, int patch) {
             .xmap(list -> BedrockVersion.of(list.getFirst(), list.get(1), list.getLast()),
                     version -> List.of(version.major, version.minor, version.patch));
     public static final Codec<BedrockVersion> STRING_CODEC = Codec.STRING.comapFlatMap(string -> {
-        String[] segments = string.split("\.");
+        String[] segments = string.split("\\.");
         if (segments.length != 3) {
             return DataResult.error(() -> "Semantic version must consist of 3 versions");
         }

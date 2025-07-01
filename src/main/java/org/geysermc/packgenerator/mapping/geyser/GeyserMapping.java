@@ -49,7 +49,7 @@ public record GeyserMapping(ResourceLocation model, ResourceLocation bedrockIden
         return bedrockOptions.icon.orElse(iconFromResourceLocation(bedrockIdentifier));
     }
 
-    private static String iconFromResourceLocation(ResourceLocation location) {
+    public static String iconFromResourceLocation(ResourceLocation location) {
         return location.toString().replace(':', '.').replace('/', '_');
     }
 
