@@ -14,6 +14,7 @@ public record BedrockTextures(Map<String, String> textures) {
                     .xmap(pairs -> pairs.stream().map(pair -> Pair.of(pair.getFirst(), pair.getSecond().getFirst().getSecond())).collect(Pair.toMap()),
                             map -> map.entrySet().stream().map(entry -> Pair.of(entry.getKey(), List.of(Pair.of("textures", entry.getValue())))).toList())
                     .xmap(BedrockTextures::new, BedrockTextures::textures);
+    public static final String TEXTURES_FOLDER = "textures/";
 
     public Builder toBuilder() {
         Builder builder = builder();
@@ -26,7 +27,6 @@ public record BedrockTextures(Map<String, String> textures) {
     }
 
     public static class Builder {
-        private static final String TEXTURES_FOLDER = "textures/";
         private final Map<String, String> textures = new HashMap<>();
 
         public Builder withItemTexture(GeyserMapping mapping, String texturePath) {
