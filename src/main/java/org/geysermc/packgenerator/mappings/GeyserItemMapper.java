@@ -47,6 +47,9 @@ public class GeyserItemMapper {
         switch (model) {
             case BlockModelWrapper modelWrapper -> {
                 ResourceLocation itemModel = ((BlockModelWrapperLocationAccessor) modelWrapper).geyser_mappings_generator$getModelOrigin();
+                if (itemModel.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
+                    itemModel = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModel.getPath());
+                }
                 return Stream.of(context.create(itemModel));
             }
             case ConditionalItemModel conditional -> {

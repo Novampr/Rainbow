@@ -10,7 +10,4 @@ public interface SelectItemModelAccessor<T> {
 
     @Accessor
     SelectItemModelProperty<T> getProperty();
-
-    @Accessor
-    SelectItemModel.ModelSelector<T> getModels();
 }
