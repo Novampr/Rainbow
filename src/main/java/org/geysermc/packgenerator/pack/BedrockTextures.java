@@ -2,7 +2,7 @@ package org.geysermc.packgenerator.pack;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
-import org.geysermc.packgenerator.mappings.GeyserMapping;
+import org.geysermc.packgenerator.mapping.GeyserMapping;
 
 import java.util.HashMap;
 import java.util.List;
