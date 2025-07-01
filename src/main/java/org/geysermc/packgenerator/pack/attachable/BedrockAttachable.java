@@ -33,19 +33,27 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
     }
 
     public static BedrockAttachable equipment(ResourceLocation identifier, EquipmentSlot slot, String texture) {
+        String script = switch (slot) {
+            case HEAD -> "v.helmet_layer_visible = 0.0;";
+            case CHEST -> "v.chest_layer_visible = 0.0;";
+            case LEGS -> "v.leg_layer_visible = 0.0;";
+            case FEET -> "v.boot_layer_visible = 0.0;";
+            default -> "";
+        };
         return builder(identifier)
                 .withMaterial(DisplaySlot.DEFAULT, "armor")
                 .withMaterial(DisplaySlot.ENCHANTED, "armor_enchanted")
                 .withTexture(DisplaySlot.DEFAULT, texture)
                 .withTexture(DisplaySlot.ENCHANTED, VanillaTextures.ENCHANTED_ACTOR_GLINT)
                 .withGeometry(DisplaySlot.DEFAULT, VanillaGeometries.fromEquipmentSlot(slot))
+                .withScript("parent_setup", script)
                 .withRenderController(VanillaRenderControllers.ARMOR)
                 .build();
     }
 
     public void save(Path attachablesPath) throws IOException {
         // Get a save attachable path by using Geyser's way of getting icons
-        CodecUtil.trySaveJson(CODEC, this, attachablesPath.resolve(GeyserMapping.iconFromResourceLocation(info.identifier)));
+        CodecUtil.trySaveJson(CODEC, this, attachablesPath.resolve(GeyserMapping.iconFromResourceLocation(info.identifier) + ".json"));
     }
 
     public static class Builder {
