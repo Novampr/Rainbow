@@ -1,8 +1,5 @@
 package org.geysermc.packgenerator;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.pack.BedrockPack;
 
@@ -25,22 +22,22 @@ public final class PackManager {
         currentPack = new BedrockPack(name);
     }
 
-    public Optional<Boolean> map(ItemStack stack) throws CommandSyntaxException {
+    public Optional<Boolean> map(ItemStack stack) {
         ensurePackIsCreated();
 
         return currentPack.map(stack);
     }
 
-    public boolean finish() throws CommandSyntaxException {
+    public boolean finish() {
         ensurePackIsCreated();
         boolean success = currentPack.save();
         currentPack = null;
         return success;
     }
 
-    private void ensurePackIsCreated() throws CommandSyntaxException {
+    public void ensurePackIsCreated() {
         if (currentPack == null) {
-            throw new SimpleCommandExceptionType(Component.literal("Create a new pack first!")).create();
+            throw new IllegalStateException("Create a new pack first!");
         }
     }
 
