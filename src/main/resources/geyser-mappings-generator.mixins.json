@@ -11,7 +11,8 @@
     "EntityRenderDispatcherAccessor",
     "SelectItemModelAccessor",
     "SelectItemModelMixin",
-    "SelectItemModelMixin$UnbakedSwitchMixin"
+    "SelectItemModelMixin$UnbakedSwitchMixin",
+    "SplashRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -49,6 +49,10 @@ public class GeyserMappings {
         mappings.put(item, mapping);
     }
 
+    public int size() {
+        return mappings.size();
+    }
+
     public void map(ItemStack stack, ProblemReporter reporter, Consumer<GeyserMapping> mappingConsumer) {
         Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
         //noinspection OptionalAssignedToNull - annoying Mojang

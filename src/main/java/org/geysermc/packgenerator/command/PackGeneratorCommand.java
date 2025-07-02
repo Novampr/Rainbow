@@ -55,7 +55,6 @@ public class PackGeneratorCommand {
                         .executes(context -> {
                             if (!PackManager.getInstance().finish()) {
                                 context.getSource().sendError(Component.literal("Errors occurred whilst trying to write the pack to disk!"));
-                                return -1;
                             }
                             context.getSource().sendFeedback(Component.literal("Wrote pack to disk"));
                             return 0;

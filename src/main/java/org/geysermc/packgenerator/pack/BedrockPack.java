@@ -2,6 +2,7 @@ package org.geysermc.packgenerator.pack;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
@@ -10,6 +11,7 @@ import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
 import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
+import org.geysermc.packgenerator.mixin.SplashRendererAccessor;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 import org.jetbrains.annotations.NotNull;
 
@@ -132,11 +134,36 @@ public class BedrockPack {
         }
 
         try {
-            Files.writeString(exportPath.resolve(REPORT_FILE), reporter.getTreeReport());
+            Files.writeString(exportPath.resolve(REPORT_FILE), createPackSummary());
         } catch (IOException exception) {
             // TODO log
         }
         return success;
+    }
+
+    private String createPackSummary() {
+        return """
+-- PACK GENERATION REPORT --
+// %s
+
+Generated pack: %s
+Mappings written: %d
+Item texture atlas size: %d
+Attachables: %d
+Textures tried to export: %d
+
+-- PROBLEM REPORT --
+%s
+""".formatted(randomSummaryComment(), name, mappings.size(), itemTextures.build().size(),
+                attachables.size(), texturesToExport.size(), reporter.getTreeReport());
+    }
+
+    private static String randomSummaryComment() {
+        SplashRenderer splash = Minecraft.getInstance().getSplashManager().getSplash();
+        if (splash == null) {
+            return "Undefined Undefined :(";
+        }
+        return ((SplashRendererAccessor) splash).getSplash();
     }
 
     private static Path createPackDirectory(String name) throws IOException {

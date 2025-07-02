@@ -22,6 +22,10 @@ public record BedrockTextures(Map<String, String> textures) {
         return builder;
     }
 
+    public int size() {
+        return textures.size();
+    }
+
     public static Builder builder() {
         return new Builder();
     }

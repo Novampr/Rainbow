@@ -11,13 +11,14 @@ import java.util.List;
 public final class ItemSuggestionMapper {
     private static final ItemSuggestionMapper INSTANCE = new ItemSuggestionMapper();
 
-    private List<String> remainingCommands = new ArrayList<>();
+    private final List<String> remainingCommands = new ArrayList<>();
     private boolean waitingOnItem = false;
     private boolean waitingOnClear = false;
     private int mapped = 0;
 
     private ItemSuggestionMapper() {}
 
+    // TODO
     public boolean start(List<String> commands) {
         if (remainingCommands.isEmpty()) {
             remainingCommands.addAll(commands);
