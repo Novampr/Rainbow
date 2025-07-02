@@ -7,6 +7,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.CodecUtil;
@@ -48,20 +49,25 @@ public class GeyserMappings {
         mappings.put(item, mapping);
     }
 
-    public void map(ItemStack stack, Consumer<GeyserMapping> mappingConsumer) {
+    public void map(ItemStack stack, ProblemReporter reporter, Consumer<GeyserMapping> mappingConsumer) {
         Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
         //noinspection OptionalAssignedToNull - annoying Mojang
         if (patchedModel == null || patchedModel.isEmpty()) {
-            throw new IllegalArgumentException("Item stack does not have a custom model");
+            return;
         }
 
         ResourceLocation model = patchedModel.get();
         String displayName = stack.getHoverName().getString();
         int protectionValue = 0; // TODO check the attributes
 
-        GeyserItemMapper.mapItem(model, displayName, protectionValue, stack.getComponentsPatch())
+        GeyserItemMapper.mapItem(model, displayName, protectionValue, stack.getComponentsPatch(), reporter)
                 .forEach(mapping -> {
-                    map(stack.getItemHolder(), mapping);
+                    try {
+                        map(stack.getItemHolder(), mapping);
+                    } catch (IllegalArgumentException exception) {
+                        reporter.forChild(() -> "mapping with bedrock identifier " + mapping.bedrockIdentifier() + " ").report(() -> "failed to add mapping to mappings file: " + exception.getMessage());
+                        return;
+                    }
                     mappingConsumer.accept(mapping);
                 });
     }

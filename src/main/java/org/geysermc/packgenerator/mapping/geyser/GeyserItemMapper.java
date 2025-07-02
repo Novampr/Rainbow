@@ -19,6 +19,7 @@ import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
@@ -37,9 +38,10 @@ import java.util.stream.Stream;
 
 public class GeyserItemMapper {
 
-    public static Stream<GeyserMapping> mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch) {
-        MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch);
+    public static Stream<GeyserMapping> mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch,
+                                                ProblemReporter reporter) {
         ItemModel model = Minecraft.getInstance().getModelManager().getItemModel(modelLocation);
+        MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch, reporter.forChild(() -> "model " + modelLocation + " "));
         return mapItem(model, context);
     }
 
@@ -53,14 +55,15 @@ public class GeyserItemMapper {
                 return Stream.of(context.create(itemModel));
             }
             case ConditionalItemModel conditional -> {
-                return mapConditionalModel(conditional, context);
+                return mapConditionalModel(conditional, context.child("condition " + conditional + " "));
             }
             case SelectItemModel<?> select -> {
-                return mapSelectModel(select, context);
+                return mapSelectModel(select, context.child("select " + select + " "));
             }
             default -> {}
         }
-        throw new UnsupportedOperationException("Unable to map item model " + model.getClass());
+        context.reporter.report(() -> "unable to map item model " + model.getClass());
+        return Stream.empty();
     }
 
     private static Stream<GeyserMapping> mapConditionalModel(ConditionalItemModel model, MappingContext context) {
@@ -71,15 +74,19 @@ public class GeyserItemMapper {
             case CustomModelDataProperty customModelData -> new GeyserConditionPredicate.CustomModelData(customModelData.index());
             case HasComponent hasComponent -> new GeyserConditionPredicate.HasComponent(hasComponent.componentType()); // ignoreDefault property not a thing, we should look into that in Geyser! TODO
             case FishingRodCast ignored -> GeyserConditionPredicate.FISHING_ROD_CAST;
-            default -> throw new UnsupportedOperationException("Unsupported conditional model property " + property.getClass());
+            default -> null;
         };
+        if (predicateProperty == null) {
+            context.reporter.report(() -> "unsupported conditional model property " + property);
+            return Stream.empty();
+        }
 
         ItemModel onTrue = ((ConditionalItemModelAccessor) model).getOnTrue();
         ItemModel onFalse = ((ConditionalItemModelAccessor) model).getOnFalse();
 
         return Stream.concat(
-                mapItem(onTrue, context.with(new GeyserConditionPredicate(predicateProperty, true))),
-                mapItem(onFalse, context.with(new GeyserConditionPredicate(predicateProperty, false)))
+                mapItem(onTrue, context.with(new GeyserConditionPredicate(predicateProperty, true), "condition on true ")),
+                mapItem(onFalse, context.with(new GeyserConditionPredicate(predicateProperty, false), "condition on false "))
         );
     }
 
@@ -92,22 +99,32 @@ public class GeyserItemMapper {
             case ContextDimension ignored -> dimension -> new GeyserMatchPredicate.ContextDimension((ResourceKey<Level>) dimension);
             // Why, Mojang?
             case net.minecraft.client.renderer.item.properties.select.CustomModelDataProperty customModelData -> string -> new GeyserMatchPredicate.CustomModelData((String) string, customModelData.index());
-            default -> throw new UnsupportedOperationException("Unsupported select model property " + property.getClass());
+            default -> null;
         };
+        if (dataConstructor == null) {
+            context.reporter.report(() -> "unsupported select model property " + property);
+            return Stream.empty();
+        }
 
         //noinspection unchecked
         Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).geyser_mappings_generator$getCases();
         return Stream.concat(
                 cases.entrySet().stream()
-                        .flatMap(caze -> mapItem(caze.getValue(), context.with(new GeyserMatchPredicate(dataConstructor.apply(caze.getKey()))))),
-                mapItem(cases.defaultReturnValue(), context)
+                        .flatMap(caze -> mapItem(caze.getValue(), context.with(new GeyserMatchPredicate(dataConstructor.apply(caze.getKey())), "select case " + caze.getKey() + " "))),
+                mapItem(cases.defaultReturnValue(), context.child("default case "))
         );
     }
 
-    private record MappingContext(List<GeyserPredicate> predicateStack, ResourceLocation model, String displayName, int protectionValue, DataComponentPatch componentPatch) {
+    private record MappingContext(List<GeyserPredicate> predicateStack, ResourceLocation model, String displayName, int protectionValue, DataComponentPatch componentPatch,
+                                  ProblemReporter reporter) {
 
-        public MappingContext with(GeyserPredicate predicate) {
-            return new MappingContext(Stream.concat(predicateStack.stream(), Stream.of(predicate)).toList(), model, displayName, protectionValue, componentPatch);
+        public MappingContext with(GeyserPredicate predicate, String childName) {
+            return new MappingContext(Stream.concat(predicateStack.stream(), Stream.of(predicate)).toList(), model, displayName, protectionValue, componentPatch,
+                    reporter.forChild(() -> childName));
+        }
+
+        public MappingContext child(String childName)  {
+            return new MappingContext(predicateStack, model, displayName, protectionValue, componentPatch, reporter.forChild(() -> childName));
         }
 
         public GeyserMapping create(ResourceLocation bedrockIdentifier) {

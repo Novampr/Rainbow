@@ -24,25 +24,17 @@ public final class PackManager {
         currentPack = new BedrockPack(name);
     }
 
-    public boolean map(ItemStack stack, boolean throwOnModelMissing) throws CommandSyntaxException {
+    public boolean map(ItemStack stack) throws CommandSyntaxException {
         ensurePackIsCreated();
 
-        try {
-            currentPack.map(stack);
-            return true;
-        } catch (IllegalArgumentException exception) {
-            if (throwOnModelMissing) {
-                throw new SimpleCommandExceptionType(Component.literal("Item stack does not have a custom model")).create();
-            } else {
-                return false;
-            }
-        }
+        return currentPack.map(stack);
     }
 
-    public void finish() throws CommandSyntaxException, IOException {
+    public boolean finish() throws CommandSyntaxException {
         ensurePackIsCreated();
-        currentPack.save();
+        boolean success = currentPack.save();
         currentPack = null;
+        return success;
     }
 
     private void ensurePackIsCreated() throws CommandSyntaxException {

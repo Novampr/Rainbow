@@ -3,6 +3,7 @@ package org.geysermc.packgenerator.pack;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
 import org.apache.commons.io.IOUtils;
 import org.geysermc.packgenerator.CodecUtil;
@@ -10,16 +11,19 @@ import org.geysermc.packgenerator.PackConstants;
 import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BedrockPack {
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve("geyser");
@@ -30,6 +34,8 @@ public class BedrockPack {
     private static final Path MANIFEST_FILE = Path.of("manifest.json");
     private static final Path ITEM_ATLAS_FILE = Path.of("textures/item_texture.json");
 
+    private static final Path REPORT_FILE = Path.of("report.txt");
+
     private final String name;
     private final Path exportPath;
     private final Path packPath;
@@ -39,22 +45,45 @@ public class BedrockPack {
     private final List<BedrockAttachable> attachables = new ArrayList<>();
     private final List<ResourceLocation> texturesToExport = new ArrayList<>();
 
+    private final ProblemReporter.Collector reporter;
+
     public BedrockPack(String name) throws IOException {
         this.name = name;
+
         exportPath = createPackDirectory(name);
         packPath = exportPath.resolve(PACK_DIRECTORY);
         mappings = CodecUtil.readOrCompute(GeyserMappings.CODEC, exportPath.resolve(MAPPINGS_FILE), GeyserMappings::new);
         manifest = CodecUtil.readOrCompute(PackManifest.CODEC, packPath.resolve(MANIFEST_FILE), () -> defaultManifest(name)).increment();
         itemTextures = CodecUtil.readOrCompute(BedrockTextureAtlas.ITEM_ATLAS_CODEC, packPath.resolve(ITEM_ATLAS_FILE),
                 () -> BedrockTextureAtlas.itemAtlas(name, BedrockTextures.builder())).textures().toBuilder();
+
+        reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name);
     }
 
     public String name() {
         return name;
     }
 
-    public void map(ItemStack stack) {
-        mappings.map(stack, mapping -> {
+    public boolean map(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        AtomicBoolean problems = new AtomicBoolean();
+        ProblemReporter mapReporter = new ProblemReporter() {
+
+            @Override
+            public @NotNull ProblemReporter forChild(PathElement child) {
+                return reporter.forChild(child);
+            }
+
+            @Override
+            public void report(Problem problem) {
+                problems.set(true);
+                reporter.report(problem);
+            }
+        };
+
+        mappings.map(stack, mapReporter, mapping -> {
             // TODO a proper way to get texture from item model
             itemTextures.withItemTexture(mapping, mapping.bedrockIdentifier().getPath());
             ResourceLocation texture = mapping.bedrockIdentifier();
@@ -64,14 +93,27 @@ public class BedrockPack {
             texturesToExport.add(texture);
             AttachableMapper.mapItem(stack, mapping.bedrockIdentifier(), texturesToExport::add).ifPresent(attachables::add);
         });
+        return problems.get();
     }
 
-    public void save() throws IOException {
-        CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve(MAPPINGS_FILE));
-        CodecUtil.trySaveJson(PackManifest.CODEC, manifest, packPath.resolve(MANIFEST_FILE));
-        CodecUtil.trySaveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), packPath.resolve(ITEM_ATLAS_FILE));
+    public boolean save() {
+        boolean success = true;
+
+        try {
+            CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve(MAPPINGS_FILE));
+            CodecUtil.trySaveJson(PackManifest.CODEC, manifest, packPath.resolve(MANIFEST_FILE));
+            CodecUtil.trySaveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), packPath.resolve(ITEM_ATLAS_FILE));
+        } catch (IOException exception) {
+            reporter.forChild(() -> "saving Geyser mappings, pack manifest, and texture atlas ").report(() -> "failed to save to pack: " + exception);
+            success = false;
+        }
         for (BedrockAttachable attachable : attachables) {
-            attachable.save(packPath.resolve(ATTACHABLES_DIRECTORY));
+            try {
+                attachable.save(packPath.resolve(ATTACHABLES_DIRECTORY));
+            } catch (IOException exception) {
+                reporter.forChild(() -> "attachable for bedrock item " + attachable.info().identifier() + " ").report(() -> "failed to save to pack: " + exception);
+                success = false;
+            }
         }
 
         for (ResourceLocation texture : texturesToExport) {
@@ -82,10 +124,19 @@ public class BedrockPack {
                 try (OutputStream outputTexture = new FileOutputStream(texturePath.toFile())) {
                     IOUtils.copy(inputTexture, outputTexture);
                 }
-            } catch (FileNotFoundException exception) {
-                // TODO
+            } catch (IOException exception) {
+                ResourceLocation finalTexture = texture;
+                reporter.forChild(() -> "texture " + finalTexture + " ").report(() -> "failed to save to pack: " + exception);
+                success = false;
             }
         }
+
+        try {
+            Files.writeString(exportPath.resolve(REPORT_FILE), reporter.getTreeReport());
+        } catch (IOException exception) {
+            // TODO log
+        }
+        return success;
     }
 
     private static Path createPackDirectory(String name) throws IOException {

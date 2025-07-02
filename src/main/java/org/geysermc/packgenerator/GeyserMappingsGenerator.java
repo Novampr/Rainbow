@@ -27,6 +27,7 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
 
     private final List<String> pendingPackCommands = new ArrayList<>();
     private boolean waitingOnItem = false;
+    private boolean waitingOnClear = false;
 
     @Override
     public void onInitializeClient() {
@@ -50,7 +51,7 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                     .then(ClientCommandManager.literal("map")
                             .executes(context -> {
                                 ItemStack heldItem = context.getSource().getPlayer().getMainHandItem();
-                                PackManager.getInstance().map(heldItem, true);
+                                PackManager.getInstance().map(heldItem);
                                 context.getSource().sendFeedback(Component.literal("Added held item to Geyser mappings"));
                                 return 0;
                             })
@@ -59,7 +60,7 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                             .executes(context -> {
                                 int mapped = 0;
                                 for (ItemStack stack : context.getSource().getPlayer().getInventory()) {
-                                    if (PackManager.getInstance().map(stack, false)) {
+                                    if (PackManager.getInstance().map(stack)) {
                                         mapped++;
                                     }
                                 }
@@ -69,10 +70,8 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                     )
                     .then(ClientCommandManager.literal("finish")
                             .executes(context -> {
-                                try {
-                                    PackManager.getInstance().finish();
-                                } catch (IOException exception) {
-                                    throw new SimpleCommandExceptionType(Component.literal(exception.getMessage())).create();
+                                if (!PackManager.getInstance().finish()) {
+                                    throw new SimpleCommandExceptionType(Component.literal("Errors occurred whilst trying to write the pack to disk!")).create();
                                 }
                                 context.getSource().sendFeedback(Component.literal("Wrote pack to disk"));
                                 return 0;
@@ -80,34 +79,39 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                     )
                     .then(ClientCommandManager.literal("auto")
                             .then(ClientCommandManager.argument("namespace", StringArgumentType.word())
-                                    .executes(context -> {
-                                        String namespace = StringArgumentType.getString(context, "namespace");
+                                    .then(ClientCommandManager.argument("path", StringArgumentType.string())
+                                            .executes(context -> {
+                                                String namespace = StringArgumentType.getString(context, "namespace");
+                                                String path = StringArgumentType.getString(context, "path");
 
-                                        // Duplicated code, this is just to try this out
-                                        try {
-                                            PackManager.getInstance().startPack(namespace);
-                                        } catch (IOException exception) {
-                                            throw new SimpleCommandExceptionType(Component.literal(exception.getMessage())).create();
-                                        }
-                                        context.getSource().sendFeedback(Component.literal("Created pack with name " + namespace));
+                                                // Duplicated code, this is just to try this out
+                                                try {
+                                                    PackManager.getInstance().startPack(namespace);
+                                                } catch (IOException exception) {
+                                                    throw new SimpleCommandExceptionType(Component.literal(exception.getMessage())).create();
+                                                }
+                                                context.getSource().sendFeedback(Component.literal("Created pack with name " + namespace));
 
-                                        // hack
-                                        CommandContext<?> suggestionsContext = new CommandContext<>(null,
-                                                "loot give @s loot " + namespace + ":",
-                                                null, null, null, null, null, null, null, false);
-                                        context.getSource().getClient().getConnection().getSuggestionsProvider()
-                                                .customSuggestion(suggestionsContext)
-                                                .whenComplete((suggestions, throwable) -> pendingPackCommands.addAll(suggestions.getList().stream().map(Suggestion::getText).toList()));
-                                        return 0;
-                                    })
+                                                // hack
+                                                CommandContext<?> suggestionsContext = new CommandContext<>(null,
+                                                        "loot give @s loot " + namespace + ":" + path,
+                                                        null, null, null, null, null, null, null, false);
+                                                context.getSource().getClient().getConnection().getSuggestionsProvider()
+                                                        .customSuggestion(suggestionsContext)
+                                                        .whenComplete((suggestions, throwable) -> pendingPackCommands.addAll(suggestions.getList().stream().map(Suggestion::getText).toList()));
+                                                return 0;
+                                            })
+                                    )
                             )
                     )
             );
         });
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
-            if (!pendingPackCommands.isEmpty() || waitingOnItem) {
-                if (!waitingOnItem) {
+            if (!pendingPackCommands.isEmpty() || waitingOnItem || waitingOnClear) {
+                if (waitingOnClear && client.player.getInventory().isEmpty()) {
+                    waitingOnClear = false;
+                } else if (!waitingOnItem) {
                     String command = pendingPackCommands.removeFirst();
                     client.getConnection().send(new ServerboundChatCommandPacket("loot give @s loot " + command));
                     waitingOnItem = true;
@@ -116,7 +120,7 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                         int mapped = 0;
                         for (ItemStack stack : client.player.getInventory()) {
                             try {
-                                if (PackManager.getInstance().map(stack, false)) {
+                                if (PackManager.getInstance().map(stack)) {
                                     mapped++;
                                 }
                             } catch (Exception exception) {
@@ -130,11 +134,16 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
                         waitingOnItem = false;
                         if (pendingPackCommands.isEmpty()) {
                             try {
-                                PackManager.getInstance().finish();
-                            } catch (IOException | CommandSyntaxException exception) {
-                                throw new RuntimeException(exception);
+                                if (!PackManager.getInstance().finish()) {
+                                    client.player.displayClientMessage(Component.literal("Errors occurred whilst trying to write the pack to disk!"), false);
+                                    return;
+                                }
+                            } catch (CommandSyntaxException e) {
+                                throw new RuntimeException(e);
                             }
                             client.player.displayClientMessage(Component.literal("Wrote pack to disk"), false);
+                        } else {
+                            waitingOnClear = true;
                         }
                     }
                 }
