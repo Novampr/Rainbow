@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.pack.BedrockPack;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public final class PackManager {
 
@@ -16,15 +17,15 @@ public final class PackManager {
 
     private PackManager() {}
 
-    public void startPack(String name) throws CommandSyntaxException, IOException {
+    public void startPack(String name) throws IOException {
         if (currentPack != null) {
-            throw new SimpleCommandExceptionType(Component.literal("Already started a pack (" + currentPack.name() + ")")).create();
+            throw new IllegalStateException("Already started a pack (" + currentPack.name() + ")");
         }
 
         currentPack = new BedrockPack(name);
     }
 
-    public boolean map(ItemStack stack) throws CommandSyntaxException {
+    public Optional<Boolean> map(ItemStack stack) throws CommandSyntaxException {
         ensurePackIsCreated();
 
         return currentPack.map(stack);

@@ -13,7 +13,6 @@ import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -64,9 +64,9 @@ public class BedrockPack {
         return name;
     }
 
-    public boolean map(ItemStack stack) {
+    public Optional<Boolean> map(ItemStack stack) {
         if (stack.isEmpty()) {
-            return false;
+            return Optional.empty();
         }
         AtomicBoolean problems = new AtomicBoolean();
         ProblemReporter mapReporter = new ProblemReporter() {
@@ -93,7 +93,7 @@ public class BedrockPack {
             texturesToExport.add(texture);
             AttachableMapper.mapItem(stack, mapping.bedrockIdentifier(), texturesToExport::add).ifPresent(attachables::add);
         });
-        return problems.get();
+        return Optional.of(problems.get());
     }
 
     public boolean save() {
