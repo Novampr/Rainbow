@@ -1,14 +1,21 @@
 package org.geysermc.packgenerator.pack;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import org.apache.commons.io.IOUtils;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
 import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +37,7 @@ public class BedrockPack {
     private final GeyserMappings mappings;
     private final BedrockTextures.Builder itemTextures;
     private final List<BedrockAttachable> attachables = new ArrayList<>();
+    private final List<ResourceLocation> texturesToExport = new ArrayList<>();
 
     public BedrockPack(String name) throws IOException {
         this.name = name;
@@ -47,8 +55,14 @@ public class BedrockPack {
 
     public void map(ItemStack stack) {
         mappings.map(stack, mapping -> {
+            // TODO a proper way to get texture from item model
             itemTextures.withItemTexture(mapping, mapping.bedrockIdentifier().getPath());
-            AttachableMapper.mapItem(stack, mapping.bedrockIdentifier()).ifPresent(attachables::add);
+            ResourceLocation texture = mapping.bedrockIdentifier();
+            if (texture.getNamespace().equals("geyser_mc")) {
+                texture = ResourceLocation.withDefaultNamespace(texture.getPath());
+            }
+            texturesToExport.add(texture);
+            AttachableMapper.mapItem(stack, mapping.bedrockIdentifier(), texturesToExport::add).ifPresent(attachables::add);
         });
     }
 
@@ -58,6 +72,19 @@ public class BedrockPack {
         CodecUtil.trySaveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), packPath.resolve(ITEM_ATLAS_FILE));
         for (BedrockAttachable attachable : attachables) {
             attachable.save(packPath.resolve(ATTACHABLES_DIRECTORY));
+        }
+
+        for (ResourceLocation texture : texturesToExport) {
+            texture = texture.withPath(path -> "textures/" + path + ".png");
+            try (InputStream inputTexture = Minecraft.getInstance().getResourceManager().open(texture)) {
+                Path texturePath = packPath.resolve(texture.getPath());
+                CodecUtil.ensureDirectoryExists(texturePath.getParent());
+                try (OutputStream outputTexture = new FileOutputStream(texturePath.toFile())) {
+                    IOUtils.copy(inputTexture, outputTexture);
+                }
+            } catch (FileNotFoundException exception) {
+                // TODO
+            }
         }
     }
 

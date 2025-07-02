@@ -13,10 +13,11 @@ import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class AttachableMapper {
 
-    public static Optional<BedrockAttachable> mapItem(ItemStack stack, ResourceLocation bedrockIdentifier) {
+    public static Optional<BedrockAttachable> mapItem(ItemStack stack, ResourceLocation bedrockIdentifier, Consumer<ResourceLocation> textureConsumer) {
         // Crazy optional statement
         return Optional.ofNullable(stack.get(DataComponents.EQUIPPABLE))
                 .flatMap(equippable -> {
@@ -27,14 +28,18 @@ public class AttachableMapper {
                 .map(assetInfo -> assetInfo
                         .mapSecond(info -> info.getLayers(getLayer(assetInfo.getFirst()))))
                 .filter(assetInfo -> !assetInfo.getSecond().isEmpty())
-                .map(assetInfo -> BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()))));
+                .map(assetInfo -> {
+                    ResourceLocation texture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
+                    textureConsumer.accept(texture);
+                    return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), texture.getPath());
+                });
     }
 
     private static EquipmentClientInfo.LayerType getLayer(EquipmentSlot slot) {
         return slot == EquipmentSlot.LEGS ? EquipmentClientInfo.LayerType.HUMANOID_LEGGINGS : EquipmentClientInfo.LayerType.HUMANOID;
     }
 
-    private static String getTexture(List<EquipmentClientInfo.Layer> info, EquipmentClientInfo.LayerType layer) {
-        return "entity/equipment/" + layer.getSerializedName() + "/" + info.getFirst().textureId().getPath();
+    private static ResourceLocation getTexture(List<EquipmentClientInfo.Layer> info, EquipmentClientInfo.LayerType layer) {
+        return info.getFirst().textureId().withPath(path -> "entity/equipment/" + layer.getSerializedName() + "/" + path);
     }
 }

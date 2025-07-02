@@ -52,7 +52,7 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
     }
 
     public void save(Path attachablesPath) throws IOException {
-        // Get a save attachable path by using Geyser's way of getting icons
+        // Get a safe attachable path by using Geyser's way of getting icons
         CodecUtil.trySaveJson(CODEC, this, attachablesPath.resolve(GeyserMapping.iconFromResourceLocation(info.identifier) + ".json"));
     }
 
