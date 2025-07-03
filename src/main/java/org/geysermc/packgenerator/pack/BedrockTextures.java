@@ -2,7 +2,7 @@ package org.geysermc.packgenerator.pack;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
-import org.geysermc.packgenerator.mapping.geyser.GeyserMapping;
+import org.geysermc.packgenerator.mapping.geyser.GeyserMapping_;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +33,7 @@ public record BedrockTextures(Map<String, String> textures) {
     public static class Builder {
         private final Map<String, String> textures = new HashMap<>();
 
-        public Builder withItemTexture(GeyserMapping mapping, String texturePath) {
+        public Builder withItemTexture(GeyserMapping_ mapping, String texturePath) {
             return withTexture(mapping.textureName(), TEXTURES_FOLDER + texturePath);
         }
 

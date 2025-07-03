@@ -38,14 +38,14 @@ import java.util.stream.Stream;
 
 public class GeyserItemMapper {
 
-    public static Stream<GeyserMapping> mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch,
-                                                ProblemReporter reporter) {
+    public static Stream<GeyserMapping_> mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch,
+                                                 ProblemReporter reporter) {
         ItemModel model = Minecraft.getInstance().getModelManager().getItemModel(modelLocation);
         MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch, reporter.forChild(() -> "model " + modelLocation + " "));
         return mapItem(model, context);
     }
 
-    private static Stream<GeyserMapping> mapItem(ItemModel model, MappingContext context) {
+    private static Stream<GeyserMapping_> mapItem(ItemModel model, MappingContext context) {
         switch (model) {
             case BlockModelWrapper modelWrapper -> {
                 ResourceLocation itemModel = ((BlockModelWrapperLocationAccessor) modelWrapper).geyser_mappings_generator$getModelOrigin();
@@ -66,7 +66,7 @@ public class GeyserItemMapper {
         return Stream.empty();
     }
 
-    private static Stream<GeyserMapping> mapConditionalModel(ConditionalItemModel model, MappingContext context) {
+    private static Stream<GeyserMapping_> mapConditionalModel(ConditionalItemModel model, MappingContext context) {
         ItemModelPropertyTest property = ((ConditionalItemModelAccessor) model).getProperty();
         GeyserConditionPredicate.Property predicateProperty = switch (property) {
             case Broken ignored -> GeyserConditionPredicate.BROKEN;
@@ -90,7 +90,7 @@ public class GeyserItemMapper {
         );
     }
 
-    private static <T> Stream<GeyserMapping> mapSelectModel(SelectItemModel<T> model, MappingContext context) {
+    private static <T> Stream<GeyserMapping_> mapSelectModel(SelectItemModel<T> model, MappingContext context) {
         //noinspection unchecked
         SelectItemModelProperty<T> property = ((SelectItemModelAccessor<T>) model).getProperty();
         Function<T, GeyserMatchPredicate.MatchPredicateData> dataConstructor = switch (property) {
@@ -127,9 +127,9 @@ public class GeyserItemMapper {
             return new MappingContext(predicateStack, model, displayName, protectionValue, componentPatch, reporter.forChild(() -> childName));
         }
 
-        public GeyserMapping create(ResourceLocation bedrockIdentifier) {
-            return new GeyserMapping(model, bedrockIdentifier, Optional.of(displayName), predicateStack,
-                    new GeyserMapping.BedrockOptions(Optional.empty(), true, false, protectionValue), // TODO handheld prediction
+        public GeyserMapping_ create(ResourceLocation bedrockIdentifier) {
+            return new GeyserMapping_(model, bedrockIdentifier, Optional.of(displayName), predicateStack,
+                    new GeyserMapping_.BedrockOptions(Optional.empty(), true, false, protectionValue), // TODO handheld prediction
                     componentPatch);
         }
     }
