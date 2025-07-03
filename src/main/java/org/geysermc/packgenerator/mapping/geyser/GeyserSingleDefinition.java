@@ -15,8 +15,8 @@ import java.util.function.Function;
 
 // TODO other keys, etc.
 // TODO sometimes still includes components key when patch before filtering is not empty but after is
-public record GeyserMapping_(ResourceLocation model, ResourceLocation bedrockIdentifier, Optional<String> displayName,
-                             List<GeyserPredicate> predicates, BedrockOptions bedrockOptions, DataComponentPatch components) implements GeyserMappingNew {
+public record GeyserSingleDefinition(ResourceLocation model, ResourceLocation bedrockIdentifier, Optional<String> displayName,
+                                     List<GeyserPredicate> predicates, BedrockOptions bedrockOptions, DataComponentPatch components) implements GeyserMapping {
     private static final List<DataComponentType<?>> SUPPORTED_COMPONENTS = List.of(DataComponents.CONSUMABLE, DataComponents.EQUIPPABLE, DataComponents.FOOD,
             DataComponents.MAX_DAMAGE, DataComponents.MAX_STACK_SIZE, DataComponents.USE_COOLDOWN, DataComponents.ENCHANTABLE, DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
 
@@ -34,22 +34,22 @@ public record GeyserMapping_(ResourceLocation model, ResourceLocation bedrockIde
         return filtered.build();
     });
 
-    public static final MapCodec<GeyserMapping_> CODEC = RecordCodecBuilder.mapCodec(instance ->
+    public static final MapCodec<GeyserSingleDefinition> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
-                    ResourceLocation.CODEC.fieldOf("model").forGetter(GeyserMapping_::model),
-                    ResourceLocation.CODEC.fieldOf("bedrock_identifier").forGetter(GeyserMapping_::bedrockIdentifier),
-                    Codec.STRING.optionalFieldOf("display_name").forGetter(GeyserMapping_::displayName),
-                    GeyserPredicate.LIST_CODEC.optionalFieldOf("predicate", List.of()).forGetter(GeyserMapping_::predicates),
-                    BedrockOptions.CODEC.optionalFieldOf("bedrock_options", BedrockOptions.DEFAULT).forGetter(GeyserMapping_::bedrockOptions),
-                    FILTERED_COMPONENT_MAP_CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(GeyserMapping_::components)
-            ).apply(instance, GeyserMapping_::new)
+                    ResourceLocation.CODEC.fieldOf("model").forGetter(GeyserSingleDefinition::model),
+                    ResourceLocation.CODEC.fieldOf("bedrock_identifier").forGetter(GeyserSingleDefinition::bedrockIdentifier),
+                    Codec.STRING.optionalFieldOf("display_name").forGetter(GeyserSingleDefinition::displayName),
+                    GeyserPredicate.LIST_CODEC.optionalFieldOf("predicate", List.of()).forGetter(GeyserSingleDefinition::predicates),
+                    BedrockOptions.CODEC.optionalFieldOf("bedrock_options", BedrockOptions.DEFAULT).forGetter(GeyserSingleDefinition::bedrockOptions),
+                    FILTERED_COMPONENT_MAP_CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(GeyserSingleDefinition::components)
+            ).apply(instance, GeyserSingleDefinition::new)
     );
 
     public String textureName() {
         return bedrockOptions.icon.orElse(iconFromResourceLocation(bedrockIdentifier));
     }
 
-    public boolean conflictsWith(GeyserMapping_ other) {
+    public boolean conflictsWith(GeyserSingleDefinition other) {
         if (!model.equals(other.model)) {
             return false;
         } else if (predicates.size() == other.predicates.size()) {

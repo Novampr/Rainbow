@@ -7,7 +7,7 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.EquipmentSlot;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
-import org.geysermc.packgenerator.mapping.geyser.GeyserMapping_;
+import org.geysermc.packgenerator.mapping.geyser.GeyserSingleDefinition;
 import org.geysermc.packgenerator.pack.BedrockTextures;
 import org.geysermc.packgenerator.pack.BedrockVersion;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +53,7 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
 
     public void save(Path attachablesPath) throws IOException {
         // Get a safe attachable path by using Geyser's way of getting icons
-        CodecUtil.trySaveJson(CODEC, this, attachablesPath.resolve(GeyserMapping_.iconFromResourceLocation(info.identifier) + ".json"));
+        CodecUtil.trySaveJson(CODEC, this, attachablesPath.resolve(GeyserSingleDefinition.iconFromResourceLocation(info.identifier) + ".json"));
     }
 
     public static class Builder {

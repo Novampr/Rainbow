@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 // TODO group definitions
 public class GeyserMappings {
-    private static final Codec<Map<Holder<Item>, Collection<GeyserMapping_>>> MAPPINGS_CODEC = Codec.unboundedMap(Item.CODEC, GeyserMapping_.CODEC.listOf().xmap(Function.identity(), ArrayList::new));
+    private static final Codec<Map<Holder<Item>, Collection<GeyserSingleDefinition>>> MAPPINGS_CODEC = Codec.unboundedMap(Item.CODEC, GeyserSingleDefinition.CODEC.listOf().xmap(Function.identity(), ArrayList::new));
 
     public static final Codec<GeyserMappings> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
@@ -30,18 +30,18 @@ public class GeyserMappings {
             ).apply(instance, (format, mappings) -> new GeyserMappings(mappings))
     );
 
-    private final Multimap<Holder<Item>, GeyserMapping_> mappings = MultimapBuilder.hashKeys().hashSetValues().build();
+    private final Multimap<Holder<Item>, GeyserSingleDefinition> mappings = MultimapBuilder.hashKeys().hashSetValues().build();
 
     public GeyserMappings() {}
 
-    private GeyserMappings(Map<Holder<Item>, Collection<GeyserMapping_>> mappings) {
+    private GeyserMappings(Map<Holder<Item>, Collection<GeyserSingleDefinition>> mappings) {
         for (Holder<Item> item : mappings.keySet()) {
             this.mappings.putAll(item, mappings.get(item));
         }
     }
 
-    public void map(Holder<Item> item, GeyserMapping_ mapping) {
-        for (GeyserMapping_ existing : mappings.get(item)) {
+    public void map(Holder<Item> item, GeyserSingleDefinition mapping) {
+        for (GeyserSingleDefinition existing : mappings.get(item)) {
             if (existing.conflictsWith(mapping)) {
                 throw new IllegalArgumentException("Mapping conflicts with existing mapping");
             }
@@ -53,7 +53,7 @@ public class GeyserMappings {
         return mappings.size();
     }
 
-    public void map(ItemStack stack, ProblemReporter reporter, Consumer<GeyserMapping_> mappingConsumer) {
+    public void map(ItemStack stack, ProblemReporter reporter, Consumer<GeyserSingleDefinition> mappingConsumer) {
         Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
         //noinspection OptionalAssignedToNull - annoying Mojang
         if (patchedModel == null || patchedModel.isEmpty()) {
@@ -76,7 +76,7 @@ public class GeyserMappings {
                 });
     }
 
-    public Map<Holder<Item>, Collection<GeyserMapping_>> mappings() {
+    public Map<Holder<Item>, Collection<GeyserSingleDefinition>> mappings() {
         return mappings.asMap();
     }
 }
