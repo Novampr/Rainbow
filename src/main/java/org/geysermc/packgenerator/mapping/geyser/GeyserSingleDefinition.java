@@ -15,7 +15,7 @@ import java.util.function.Function;
 
 // TODO other keys, etc.
 // TODO sometimes still includes components key when patch before filtering is not empty but after is
-public record GeyserSingleDefinition(ResourceLocation model, ResourceLocation bedrockIdentifier, Optional<String> displayName,
+public record GeyserSingleDefinition(Optional<ResourceLocation> model, ResourceLocation bedrockIdentifier, Optional<String> displayName,
                                      List<GeyserPredicate> predicates, BedrockOptions bedrockOptions, DataComponentPatch components) implements GeyserMapping {
     private static final List<DataComponentType<?>> SUPPORTED_COMPONENTS = List.of(DataComponents.CONSUMABLE, DataComponents.EQUIPPABLE, DataComponents.FOOD,
             DataComponents.MAX_DAMAGE, DataComponents.MAX_STACK_SIZE, DataComponents.USE_COOLDOWN, DataComponents.ENCHANTABLE, DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
@@ -36,7 +36,7 @@ public record GeyserSingleDefinition(ResourceLocation model, ResourceLocation be
 
     public static final MapCodec<GeyserSingleDefinition> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
-                    ResourceLocation.CODEC.fieldOf("model").forGetter(GeyserSingleDefinition::model),
+                    ResourceLocation.CODEC.optionalFieldOf("model").forGetter(GeyserSingleDefinition::model),
                     ResourceLocation.CODEC.fieldOf("bedrock_identifier").forGetter(GeyserSingleDefinition::bedrockIdentifier),
                     Codec.STRING.optionalFieldOf("display_name").forGetter(GeyserSingleDefinition::displayName),
                     GeyserPredicate.LIST_CODEC.optionalFieldOf("predicate", List.of()).forGetter(GeyserSingleDefinition::predicates),
@@ -49,8 +49,10 @@ public record GeyserSingleDefinition(ResourceLocation model, ResourceLocation be
         return bedrockOptions.icon.orElse(iconFromResourceLocation(bedrockIdentifier));
     }
 
-    public boolean conflictsWith(GeyserSingleDefinition other) {
-        if (!model.equals(other.model)) {
+    public boolean conflictsWith(Optional<ResourceLocation> parentModel, GeyserSingleDefinition other) {
+        ResourceLocation thisModel = model.or(() -> parentModel).orElseThrow();
+        ResourceLocation otherModel = other.model.or(() -> parentModel).orElseThrow();
+        if (!thisModel.equals(otherModel)) {
             return false;
         } else if (predicates.size() == other.predicates.size()) {
             boolean predicatesAreEqual = true;
@@ -63,6 +65,10 @@ public record GeyserSingleDefinition(ResourceLocation model, ResourceLocation be
             return predicatesAreEqual;
         }
         return false;
+    }
+
+    public GeyserSingleDefinition withoutModel() {
+        return new GeyserSingleDefinition(Optional.empty(), bedrockIdentifier, displayName, predicates, bedrockOptions, components);
     }
 
     @Override

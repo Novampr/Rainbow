@@ -1,13 +1,21 @@
 package org.geysermc.packgenerator.mapping.geyser;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
 public interface GeyserMapping {
 
-    Codec<GeyserMapping> CODEC = Type.CODEC.dispatch(GeyserMapping::type, Type::codec);
+    Codec<GeyserMapping> CODEC = Codec.lazyInitialized(() -> Type.CODEC.dispatch(GeyserMapping::type, Type::codec));
+    // Not perfect since we're not checking single definitions in groups without a model... but good enough
+    Codec<GeyserMapping> MODEL_SAFE_CODEC = CODEC.validate(mapping -> {
+        if (mapping instanceof GeyserSingleDefinition single && single.model().isEmpty()) {
+            return DataResult.error(() -> "Top level single definition must have a model");
+        }
+        return DataResult.success(mapping);
+    });
 
     Type type();
 

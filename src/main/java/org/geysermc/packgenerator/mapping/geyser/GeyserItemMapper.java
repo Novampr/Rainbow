@@ -128,7 +128,7 @@ public class GeyserItemMapper {
         }
 
         public GeyserSingleDefinition create(ResourceLocation bedrockIdentifier) {
-            return new GeyserSingleDefinition(model, bedrockIdentifier, Optional.of(displayName), predicateStack,
+            return new GeyserSingleDefinition(Optional.of(model), bedrockIdentifier, Optional.of(displayName), predicateStack,
                     new GeyserSingleDefinition.BedrockOptions(Optional.empty(), true, false, protectionValue), // TODO handheld prediction
                     componentPatch);
         }
