@@ -205,7 +205,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                 instance.group(
                         ExtraCodecs.VECTOR3F.fieldOf("origin").forGetter(Cube::origin),
                         ExtraCodecs.VECTOR3F.fieldOf("size").forGetter(Cube::size),
-                        ExtraCodecs.VECTOR3F.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Cube::size),
+                        ExtraCodecs.VECTOR3F.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Cube::rotation),
                         ExtraCodecs.VECTOR3F.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Cube::pivot),
                         Codec.FLOAT.optionalFieldOf("inflate", 0.0F).forGetter(Cube::inflate),
                         Codec.BOOL.optionalFieldOf("mirror", false).forGetter(Cube::mirror),

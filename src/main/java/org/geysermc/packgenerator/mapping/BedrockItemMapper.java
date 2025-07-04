@@ -94,6 +94,8 @@ public class BedrockItemMapper {
                             if (layer0Texture != null) {
                                 texture = layer0Texture.texture();
                             } else {
+                                // Unknown texture (doesn't use layer0), so we immediately assume the geometry is custom
+                                // This check should probably be done differently
                                 customGeometry = Optional.of((SimpleUnbakedGeometry) itemModel.getTopGeometry());
                             }
                             context.create(bedrockIdentifier, texture, handheld, customGeometry);
