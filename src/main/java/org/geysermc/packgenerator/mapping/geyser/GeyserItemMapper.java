@@ -24,6 +24,7 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
 import org.geysermc.packgenerator.accessor.BlockModelWrapperLocationAccessor;
+import org.geysermc.packgenerator.accessor.ResolvedModelAccessor;
 import org.geysermc.packgenerator.accessor.SelectItemModelCasesAccessor;
 import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserConditionPredicate;
 import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserMatchPredicate;
@@ -41,18 +42,27 @@ public class GeyserItemMapper {
     public static Stream<GeyserSingleDefinition> mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch,
                                                          ProblemReporter reporter) {
         ItemModel model = Minecraft.getInstance().getModelManager().getItemModel(modelLocation);
-        MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch, reporter.forChild(() -> "model " + modelLocation + " "));
+        MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch, reporter.forChild(() -> "client item definition " + modelLocation + " "));
         return mapItem(model, context);
     }
 
     private static Stream<GeyserSingleDefinition> mapItem(ItemModel model, MappingContext context) {
         switch (model) {
             case BlockModelWrapper modelWrapper -> {
-                ResourceLocation itemModel = ((BlockModelWrapperLocationAccessor) modelWrapper).geyser_mappings_generator$getModelOrigin();
-                if (itemModel.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
-                    itemModel = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModel.getPath());
-                }
-                return Stream.of(context.create(itemModel));
+                ResourceLocation itemModelLocation = ((BlockModelWrapperLocationAccessor) modelWrapper).geyser_mappings_generator$getModelOrigin();
+
+                return ((ResolvedModelAccessor) Minecraft.getInstance().getModelManager()).geyser_mappings_generator$getResolvedModel(itemModelLocation)
+                        .map(itemModel -> {
+                            ResourceLocation bedrockIdentifier = itemModelLocation;
+                            if (bedrockIdentifier.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
+                                bedrockIdentifier = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModelLocation.getPath());
+                            }
+                            return Stream.of(context.create(bedrockIdentifier));
+                        })
+                        .orElseGet(() -> {
+                            context.reporter.report(() -> "missing block model " + itemModelLocation);
+                            return Stream.empty();
+                        });
             }
             case ConditionalItemModel conditional -> {
                 return mapConditionalModel(conditional, context.child("condition " + conditional + " "));

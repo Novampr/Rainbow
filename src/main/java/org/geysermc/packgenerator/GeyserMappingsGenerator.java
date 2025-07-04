@@ -21,6 +21,7 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
     private final PackManager packManager = new PackManager();
     private final PackMapper packMapper = new PackMapper(packManager);
 
+    // TODO export language overrides
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> PackGeneratorCommand.register(dispatcher, packManager, packMapper));

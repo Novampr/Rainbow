@@ -15,6 +15,7 @@ import java.util.function.Function;
 
 // TODO other keys, etc.
 // TODO sometimes still includes components key when patch before filtering is not empty but after is
+// TODO display name can be a component
 public record GeyserSingleDefinition(Optional<ResourceLocation> model, ResourceLocation bedrockIdentifier, Optional<String> displayName,
                                      List<GeyserPredicate> predicates, BedrockOptions bedrockOptions, DataComponentPatch components) implements GeyserMapping {
     private static final List<DataComponentType<?>> SUPPORTED_COMPONENTS = List.of(DataComponents.CONSUMABLE, DataComponents.EQUIPPABLE, DataComponents.FOOD,

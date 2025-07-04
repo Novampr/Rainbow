@@ -2,7 +2,7 @@ package org.geysermc.packgenerator.accessor;
 
 import net.minecraft.resources.ResourceLocation;
 
-// Implemented on BlockModelWrapper, since this class doesn't store its model, we have to store it manually
+// Implemented on BlockModelWrapper, since this class doesn't store its model after baking, we have to store it manually
 public interface BlockModelWrapperLocationAccessor {
 
     ResourceLocation geyser_mappings_generator$getModelOrigin();

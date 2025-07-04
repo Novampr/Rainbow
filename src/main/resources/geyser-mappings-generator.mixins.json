@@ -9,6 +9,7 @@
     "BlockModelWrapperMixin$UnbakedMixin",
     "ConditionalItemModelAccessor",
     "EntityRenderDispatcherAccessor",
+    "ModelManagerMixin",
     "SelectItemModelAccessor",
     "SelectItemModelMixin",
     "SelectItemModelMixin$UnbakedSwitchMixin",
