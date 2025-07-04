@@ -1,5 +1,6 @@
 package org.geysermc.packgenerator.pack.geometry;
 
+import com.mojang.math.Quadrant;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Direction;
@@ -247,12 +248,16 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                 return this;
             }
 
-            public Builder withFace(Direction direction, Vector2f uvOrigin, Vector2f uvSize) {
+            public Builder withFace(Direction direction, Vector2f uvOrigin, Vector2f uvSize, Quadrant uvRotation) {
                 if (faces.containsKey(direction)) {
                     throw new IllegalArgumentException("Already added a face for direction " + direction);
                 }
-                faces.put(direction, new Face(uvOrigin, uvSize));
+                faces.put(direction, new Face(uvOrigin, uvSize, uvRotation));
                 return this;
+            }
+
+            public Builder withFace(Direction direction, Vector2f uvOrigin, Vector2f uvSize) {
+                return withFace(direction, uvOrigin, uvSize, Quadrant.R0);
             }
 
             public Cube build() {
@@ -261,11 +266,12 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         }
     }
 
-    public record Face(Vector2f uvOrigin, Vector2f uvSize) {
+    public record Face(Vector2f uvOrigin, Vector2f uvSize, Quadrant uvRotation) {
         public static final Codec<Face> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         ExtraCodecs.VECTOR2F.fieldOf("uv").forGetter(Face::uvOrigin),
-                        ExtraCodecs.VECTOR2F.fieldOf("uv_size").forGetter(Face::uvSize)
+                        ExtraCodecs.VECTOR2F.fieldOf("uv_size").forGetter(Face::uvSize),
+                        Quadrant.CODEC.optionalFieldOf("uv_rotation", Quadrant.R0).forGetter(Face::uvRotation)
                 ).apply(instance, Face::new)
         );
     }
