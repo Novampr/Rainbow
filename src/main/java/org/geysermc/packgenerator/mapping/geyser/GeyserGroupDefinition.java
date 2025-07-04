@@ -37,6 +37,18 @@ public record GeyserGroupDefinition(Optional<ResourceLocation> model, List<Geyse
         return false;
     }
 
+    public int size() {
+        int totalSize = 0;
+        for (GeyserMapping definition : definitions) {
+            if (definition instanceof GeyserGroupDefinition group) {
+                totalSize += group.size();
+            } else {
+                totalSize++;
+            }
+        }
+        return totalSize;
+    }
+
     @Override
     public Type type() {
         return Type.GROUP;

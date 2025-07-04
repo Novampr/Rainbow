@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import org.apache.commons.io.IOUtils;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
+import org.geysermc.packgenerator.mapping.BedrockItemMapper;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.mixin.SplashRendererAccessor;
 import org.jetbrains.annotations.NotNull;
@@ -99,7 +100,7 @@ public class BedrockPack {
             }
         };
 
-        mappings.map(stack, model, mapReporter, bedrockItem -> {
+        BedrockItemMapper.tryMapStack(stack, model, mapReporter, mappings, bedrockItem -> {
             itemTextures.withItemTexture(bedrockItem);
             texturesToExport.add(bedrockItem.texture());
             bedrockItems.add(bedrockItem);

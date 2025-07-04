@@ -6,19 +6,14 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.CodecUtil;
-import org.geysermc.packgenerator.mapping.BedrockItemConsumer;
-import org.geysermc.packgenerator.mapping.BedrockItemMapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class GeyserMappings {
@@ -72,15 +67,15 @@ public class GeyserMappings {
     }
 
     public int size() {
-        return mappings.size();
-    }
-
-    public void map(ItemStack stack, ResourceLocation model, ProblemReporter reporter, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
-        String displayName = stack.getHoverName().getString();
-        int protectionValue = 0; // TODO check the attributes
-
-        BedrockItemMapper.mapItem(model, displayName, protectionValue, stack.getComponentsPatch(), reporter,
-                mapping -> map(stack.getItemHolder(), mapping), itemConsumer, additionalTextureConsumer);
+        int totalSize = 0;
+        for (GeyserMapping mapping : mappings.values()) {
+            if (mapping instanceof GeyserGroupDefinition group) {
+                totalSize += group.size();
+            } else {
+                totalSize++;
+            }
+        }
+        return totalSize;
     }
 
     public Map<Holder<Item>, Collection<GeyserMapping>> mappings() {

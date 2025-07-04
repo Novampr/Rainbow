@@ -24,6 +24,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
 import org.geysermc.packgenerator.accessor.BlockModelWrapperLocationAccessor;
@@ -31,6 +32,7 @@ import org.geysermc.packgenerator.accessor.ResolvedModelAccessor;
 import org.geysermc.packgenerator.accessor.SelectItemModelCasesAccessor;
 import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geometry.GeometryMapper;
+import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.mapping.geyser.GeyserSingleDefinition;
 import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserConditionPredicate;
 import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserMatchPredicate;
@@ -49,6 +51,15 @@ public class BedrockItemMapper {
     private static final List<ResourceLocation> HANDHELD_MODELS = Stream.of("item/handheld", "item/handheld_rod", "item/handheld_mace")
             .map(ResourceLocation::withDefaultNamespace)
             .toList();
+
+    public static void tryMapStack(ItemStack stack, ResourceLocation model, ProblemReporter reporter,
+                                   GeyserMappings mappings, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
+        String displayName = stack.getHoverName().getString();
+        int protectionValue = 0; // TODO check the attributes
+
+        mapItem(model, displayName, protectionValue, stack.getComponentsPatch(), reporter,
+                mapping -> mappings.map(stack.getItemHolder(), mapping), itemConsumer, additionalTextureConsumer);
+    }
 
     public static void mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch, ProblemReporter reporter,
                                Consumer<GeyserSingleDefinition> mappingConsumer, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
