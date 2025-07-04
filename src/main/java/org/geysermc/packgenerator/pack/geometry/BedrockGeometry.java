@@ -203,8 +203,8 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         private static final Codec<Map<Direction, Face>> FACE_MAP_CODEC = Codec.unboundedMap(Direction.CODEC, Face.CODEC);
         public static final Codec<Cube> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
-                        ExtraCodecs.VECTOR3F.fieldOf("uvOrigin").forGetter(Cube::origin),
-                        ExtraCodecs.VECTOR3F.fieldOf("uvSize").forGetter(Cube::size),
+                        ExtraCodecs.VECTOR3F.fieldOf("origin").forGetter(Cube::origin),
+                        ExtraCodecs.VECTOR3F.fieldOf("size").forGetter(Cube::size),
                         ExtraCodecs.VECTOR3F.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Cube::size),
                         ExtraCodecs.VECTOR3F.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Cube::pivot),
                         Codec.FLOAT.optionalFieldOf("inflate", 0.0F).forGetter(Cube::inflate),

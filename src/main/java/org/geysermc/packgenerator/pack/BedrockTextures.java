@@ -2,7 +2,6 @@ package org.geysermc.packgenerator.pack;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
-import org.geysermc.packgenerator.mapping.geyser.GeyserSingleDefinition;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,8 +32,8 @@ public record BedrockTextures(Map<String, String> textures) {
     public static class Builder {
         private final Map<String, String> textures = new HashMap<>();
 
-        public Builder withItemTexture(GeyserSingleDefinition mapping, String texturePath) {
-            return withTexture(mapping.textureName(), TEXTURES_FOLDER + texturePath);
+        public Builder withItemTexture(BedrockItem item) {
+            return withTexture(item.textureName(), TEXTURES_FOLDER + item.texture().getPath());
         }
 
         public Builder withTexture(String name, String texture) {

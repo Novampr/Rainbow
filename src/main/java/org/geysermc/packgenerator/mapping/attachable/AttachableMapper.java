@@ -4,10 +4,11 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.EquipmentAssetManager;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.equipment.Equippable;
 import org.geysermc.packgenerator.mixin.EntityRenderDispatcherAccessor;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 
@@ -17,9 +18,10 @@ import java.util.function.Consumer;
 
 public class AttachableMapper {
 
-    public static Optional<BedrockAttachable> mapItem(ItemStack stack, ResourceLocation bedrockIdentifier, Consumer<ResourceLocation> textureConsumer) {
+    public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, Consumer<ResourceLocation> textureConsumer) {
         // Crazy optional statement
-        return Optional.ofNullable(stack.get(DataComponents.EQUIPPABLE))
+        return Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
+                .flatMap(optional -> (Optional<Equippable>) optional)
                 .flatMap(equippable -> {
                     EquipmentAssetManager equipmentAssets = ((EntityRenderDispatcherAccessor) Minecraft.getInstance().getEntityRenderDispatcher()).getEquipmentAssets();
                     return equippable.assetId().map(asset -> Pair.of(equippable.slot(), equipmentAssets.get(asset)));

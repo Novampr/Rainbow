@@ -10,10 +10,8 @@ import net.minecraft.world.item.ItemStack;
 import org.apache.commons.io.IOUtils;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.PackConstants;
-import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.mixin.SplashRendererAccessor;
-import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileOutputStream;
@@ -22,7 +20,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +31,7 @@ public class BedrockPack {
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve("geyser");
     private static final Path PACK_DIRECTORY = Path.of("pack");
     private static final Path ATTACHABLES_DIRECTORY = Path.of("attachables");
+    private static final Path GEOMETRY_DIRECTORY = Path.of("models/entity");
 
     private static final Path MAPPINGS_FILE = Path.of("geyser_mappings.json");
     private static final Path MANIFEST_FILE = Path.of("manifest.json");
@@ -47,9 +45,9 @@ public class BedrockPack {
     private final PackManifest manifest;
     private final GeyserMappings mappings;
     private final BedrockTextures.Builder itemTextures;
-    private final List<BedrockAttachable> attachables = new ArrayList<>();
-    private final Set<ResourceLocation> texturesToExport = new HashSet<>();
 
+    private final Set<BedrockItem> bedrockItems = new HashSet<>();
+    private final Set<ResourceLocation> texturesToExport = new HashSet<>();
     private final Set<ResourceLocation> modelsMapped = new HashSet<>();
 
     private final ProblemReporter.Collector reporter;
@@ -101,11 +99,11 @@ public class BedrockPack {
             }
         };
 
-        mappings.map(stack, model, mapReporter, (mapping, texture) -> {
-            itemTextures.withItemTexture(mapping, texture.getPath());
-            texturesToExport.add(texture);
-            AttachableMapper.mapItem(stack, mapping.bedrockIdentifier(), texturesToExport::add).ifPresent(attachables::add);
-        });
+        mappings.map(stack, model, mapReporter, bedrockItem -> {
+            itemTextures.withItemTexture(bedrockItem);
+            texturesToExport.add(bedrockItem.texture());
+            bedrockItems.add(bedrockItem);
+        }, texturesToExport::add);
         return Optional.of(problems.get());
     }
 
@@ -120,11 +118,11 @@ public class BedrockPack {
             reporter.forChild(() -> "saving Geyser mappings, pack manifest, and texture atlas ").report(() -> "failed to save to pack: " + exception);
             success = false;
         }
-        for (BedrockAttachable attachable : attachables) {
+        for (BedrockItem item : bedrockItems) {
             try {
-                attachable.save(packPath.resolve(ATTACHABLES_DIRECTORY));
+                item.save(packPath.resolve(ATTACHABLES_DIRECTORY), packPath.resolve(GEOMETRY_DIRECTORY));
             } catch (IOException exception) {
-                reporter.forChild(() -> "attachable for bedrock item " + attachable.info().identifier() + " ").report(() -> "failed to save to pack: " + exception);
+                reporter.forChild(() -> "files for bedrock item " + item.identifier() + " ").report(() -> "failed to save to pack: " + exception);
                 success = false;
             }
         }
@@ -166,7 +164,7 @@ Textures tried to export: %d
 -- PROBLEM REPORT --
 %s
 """.formatted(randomSummaryComment(), name, mappings.size(), itemTextures.build().size(),
-                attachables.size(), texturesToExport.size(), reporter.getTreeReport());
+                bedrockItems.size(), texturesToExport.size(), reporter.getTreeReport());
     }
 
     private static String randomSummaryComment() {
