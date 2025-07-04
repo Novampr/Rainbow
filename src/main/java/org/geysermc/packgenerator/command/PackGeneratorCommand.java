@@ -10,9 +10,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import org.geysermc.packgenerator.GeyserMappingsGenerator;
 import org.geysermc.packgenerator.PackManager;
-import org.geysermc.packgenerator.mapper.PackMappers;
+import org.geysermc.packgenerator.mapper.ItemSuggestionProvider;
+import org.geysermc.packgenerator.mapper.PackMapper;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 public class PackGeneratorCommand {
 
-    public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, PackManager packManager, PackMappers mappers) {
+    public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, PackManager packManager, PackMapper packMapper) {
         dispatcher.register(ClientCommandManager.literal("packgenerator")
                 .then(ClientCommandManager.literal("create")
                         .then(ClientCommandManager.argument("name", StringArgumentType.word())
@@ -39,14 +39,16 @@ public class PackGeneratorCommand {
                 )
                 .then(ClientCommandManager.literal("map")
                         .executes(context -> {
-                            ItemStack heldItem = context.getSource().getPlayer().getMainHandItem();
-                            Optional<Boolean> problems = packManager.map(heldItem);
-                            if (problems.isEmpty()) {
-                                context.getSource().sendError(Component.literal("No item found to map!"));
-                            } else if (problems.get()) {
-                                context.getSource().sendError(Component.literal("Problems occurred whilst mapping the item!"));
-                            }
-                            context.getSource().sendFeedback(Component.literal("Added held item to Geyser mappings"));
+                            packManager.run(pack -> {
+                                ItemStack heldItem = context.getSource().getPlayer().getMainHandItem();
+                                Optional<Boolean> problems = pack.map(heldItem);
+                                if (problems.isEmpty()) {
+                                    context.getSource().sendError(Component.literal("No item found to map!"));
+                                } else if (problems.get()) {
+                                    context.getSource().sendError(Component.literal("Problems occurred whilst mapping the item!"));
+                                }
+                                context.getSource().sendFeedback(Component.literal("Added held item to Geyser mappings"));
+                            });
                             return 0;
                         })
                 )
@@ -55,24 +57,27 @@ public class PackGeneratorCommand {
                 )
                 .then(ClientCommandManager.literal("finish")
                         .executes(context -> {
-                            if (!packManager.finish()) {
-                                context.getSource().sendError(Component.literal("Errors occurred whilst trying to write the pack to disk!"));
-                            }
-                            context.getSource().sendFeedback(Component.literal("Wrote pack to disk"));
+                            packManager.finish().ifPresent(success -> {
+                                if (!success) {
+                                    context.getSource().sendError(Component.literal("Errors occurred whilst trying to write the pack to disk!"));
+                                } else {
+                                    context.getSource().sendFeedback(Component.literal("Wrote pack to disk"));
+                                }
+                            });
                             return 0;
                         })
                 )
                 .then(ClientCommandManager.literal("auto")
                         .then(ClientCommandManager.argument("suggestions", CommandSuggestionsArgumentType.TYPE)
                                 .executes(context -> {
-                                    packManager.ensurePackIsCreated();
                                     Pair<String, CompletableFuture<Suggestions>> suggestions = CommandSuggestionsArgumentType.getSuggestions(context, "suggestions");
                                     String baseCommand = suggestions.getFirst();
                                     suggestions.getSecond().thenAccept(completed -> {
-                                        mappers.getSuggestionMapper().start(completed.getList().stream()
+                                        ItemSuggestionProvider provider = new ItemSuggestionProvider(completed.getList().stream()
                                                 .map(suggestion -> baseCommand.substring(0, suggestion.getRange().getStart()) + suggestion.getText())
                                                 .toList());
-                                        context.getSource().sendFeedback(Component.literal("Running " + mappers.getSuggestionMapper().queueSize() + " commands to obtain custom items to map"));
+                                        packMapper.setItemProvider(provider);
+                                        context.getSource().sendFeedback(Component.literal("Running " + provider.queueSize() + " commands to obtain custom items to map"));
                                     });
                                     return 0;
                                 })
@@ -82,23 +87,26 @@ public class PackGeneratorCommand {
     }
 
     public static int mapInventory(PackManager manager, Inventory inventory, Consumer<Component> feedback, boolean feedbackOnEmpty) {
-        int mapped = 0;
-        boolean errors = false;
-        for (ItemStack stack : inventory) {
-            Optional<Boolean> problems = manager.map(stack);
-            if (problems.isPresent()) {
-                mapped++;
-                errors |= problems.get();
+        return manager.run(pack -> {
+            int mapped = 0;
+            boolean errors = false;
+            for (ItemStack stack : inventory) {
+                Optional<Boolean> problems = pack.map(stack);
+                if (problems.isPresent()) {
+                    mapped++;
+                    errors |= problems.get();
+                }
             }
-        }
-        if (mapped > 0) {
-            if (errors) {
-                feedback.accept(Component.literal("Problems occurred whilst mapping items!").withStyle(ChatFormatting.RED));
+            if (mapped > 0) {
+                if (errors) {
+                    feedback.accept(Component.literal("Problems occurred whilst mapping items!").withStyle(ChatFormatting.RED));
+                }
+                feedback.accept(Component.literal("Mapped " + mapped + " items from your inventory"));
+            } else if (feedbackOnEmpty) {
+                feedback.accept(Component.literal("No items were mapped"));
             }
-            feedback.accept(Component.literal("Mapped " + mapped + " items from your inventory"));
-        } else if (feedbackOnEmpty) {
-            feedback.accept(Component.literal("No items were mapped"));
-        }
-        return mapped;
+
+            return mapped;
+        }).orElse(0);
     }
 }

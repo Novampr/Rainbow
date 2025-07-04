@@ -3,6 +3,7 @@ package org.geysermc.packgenerator.pack;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.SplashRenderer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
@@ -22,8 +23,10 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,7 +48,9 @@ public class BedrockPack {
     private final GeyserMappings mappings;
     private final BedrockTextures.Builder itemTextures;
     private final List<BedrockAttachable> attachables = new ArrayList<>();
-    private final List<ResourceLocation> texturesToExport = new ArrayList<>();
+    private final Set<ResourceLocation> texturesToExport = new HashSet<>();
+
+    private final Set<ResourceLocation> modelsMapped = new HashSet<>();
 
     private final ProblemReporter.Collector reporter;
 
@@ -67,7 +72,7 @@ public class BedrockPack {
     }
 
     public Optional<Boolean> map(ItemStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || !modelsMapped.add(stack.get(DataComponents.ITEM_MODEL))) {
             return Optional.empty();
         }
         AtomicBoolean problems = new AtomicBoolean();

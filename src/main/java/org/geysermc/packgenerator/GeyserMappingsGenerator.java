@@ -9,7 +9,7 @@ import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.resources.ResourceLocation;
 import org.geysermc.packgenerator.command.CommandSuggestionsArgumentType;
 import org.geysermc.packgenerator.command.PackGeneratorCommand;
-import org.geysermc.packgenerator.mapper.PackMappers;
+import org.geysermc.packgenerator.mapper.PackMapper;
 import org.slf4j.Logger;
 
 public class GeyserMappingsGenerator implements ClientModInitializer {
@@ -19,12 +19,12 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     private final PackManager packManager = new PackManager();
-    private final PackMappers packMappers = new PackMappers(packManager);
+    private final PackMapper packMapper = new PackMapper();
 
     @Override
     public void onInitializeClient() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> PackGeneratorCommand.register(dispatcher, packManager, packMappers));
-        ClientTickEvents.START_CLIENT_TICK.register(packMappers::tick);
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> PackGeneratorCommand.register(dispatcher, packManager, packMapper));
+        ClientTickEvents.START_CLIENT_TICK.register(minecraft -> packMapper.tick(packManager, minecraft));
 
         ArgumentTypeRegistry.registerArgumentType(getModdedLocation("command_suggestions"),
                 CommandSuggestionsArgumentType.class, SingletonArgumentInfo.contextFree(CommandSuggestionsArgumentType::new));

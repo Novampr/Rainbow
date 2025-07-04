@@ -1,11 +1,23 @@
 package org.geysermc.packgenerator.mapper;
 
-import org.geysermc.packgenerator.PackManager;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.ItemStack;
 
-public class InventoryMapper {
-    private final PackManager packManager;
+import java.util.stream.Stream;
 
-    public InventoryMapper(PackManager packManager) {
-        this.packManager = packManager;
+public class InventoryMapper implements CustomItemProvider {
+
+    public InventoryMapper() {
+    }
+
+    @Override
+    public Stream<ItemStack> nextItems(LocalPlayer player, ClientPacketListener connection) {
+        return Stream.empty();
+    }
+
+    @Override
+    public boolean isDone() {
+        return false;
     }
 }
