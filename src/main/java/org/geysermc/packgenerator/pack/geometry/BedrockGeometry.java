@@ -61,7 +61,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         private Optional<Integer> textureHeight = Optional.empty();
 
         public Builder(String identifier) {
-            this.identifier = identifier;
+            this.identifier = "geometry." + identifier;
         }
 
         public Builder withVisibleBoundsWidth(float visibleBoundsWidth) {

@@ -31,6 +31,7 @@ import org.geysermc.packgenerator.accessor.BlockModelWrapperLocationAccessor;
 import org.geysermc.packgenerator.accessor.ResolvedModelAccessor;
 import org.geysermc.packgenerator.accessor.SelectItemModelCasesAccessor;
 import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
+import org.geysermc.packgenerator.mapping.geometry.BedrockGeometryContext;
 import org.geysermc.packgenerator.mapping.geometry.GeometryMapper;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.mapping.geyser.GeyserSingleDefinition;
@@ -40,6 +41,7 @@ import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserPredicate;
 import org.geysermc.packgenerator.mixin.ConditionalItemModelAccessor;
 import org.geysermc.packgenerator.mixin.SelectItemModelAccessor;
 import org.geysermc.packgenerator.pack.BedrockItem;
+import org.geysermc.packgenerator.pack.geometry.BedrockGeometry;
 
 import java.util.List;
 import java.util.Optional;
@@ -175,9 +177,12 @@ public class BedrockItemMapper {
                 return;
             }
 
+            // TODO Should probably get a better way to get geometry texture
+            Optional<BedrockGeometry> bedrockGeometry = customGeometry.map(geometry -> GeometryMapper.mapGeometry(definition.textureName(), geometry));
+            Optional<BedrockGeometryContext> geometryInfo = bedrockGeometry.map(geometry -> new BedrockGeometryContext(geometry.definitions().getFirst(), texture));
+
             itemConsumer.accept(new BedrockItem(bedrockIdentifier, definition.textureName(), texture,
-                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, additionalTextureConsumer),
-                    customGeometry.map(geometry -> GeometryMapper.mapGeometry(definition.textureName(), geometry))));
+                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, geometryInfo, additionalTextureConsumer), bedrockGeometry));
         }
     }
 }

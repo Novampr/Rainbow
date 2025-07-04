@@ -9,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
+import org.geysermc.packgenerator.mapping.geometry.BedrockGeometryContext;
 import org.geysermc.packgenerator.mixin.EntityRenderDispatcherAccessor;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
 
@@ -18,23 +19,27 @@ import java.util.function.Consumer;
 
 public class AttachableMapper {
 
-    public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, Consumer<ResourceLocation> textureConsumer) {
+    public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, Optional<BedrockGeometryContext> customGeometry,
+                                                      Consumer<ResourceLocation> textureConsumer) {
         // Crazy optional statement
-        return Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
-                .flatMap(optional -> (Optional<Equippable>) optional)
-                .flatMap(equippable -> {
-                    EquipmentAssetManager equipmentAssets = ((EntityRenderDispatcherAccessor) Minecraft.getInstance().getEntityRenderDispatcher()).getEquipmentAssets();
-                    return equippable.assetId().map(asset -> Pair.of(equippable.slot(), equipmentAssets.get(asset)));
-                })
-                .filter(assetInfo -> assetInfo.getSecond() != EquipmentAssetManager.MISSING)
-                .map(assetInfo -> assetInfo
-                        .mapSecond(info -> info.getLayers(getLayer(assetInfo.getFirst()))))
-                .filter(assetInfo -> !assetInfo.getSecond().isEmpty())
-                .map(assetInfo -> {
-                    ResourceLocation texture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
-                    textureConsumer.accept(texture);
-                    return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), texture.getPath());
-                });
+        // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
+        return customGeometry
+                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.geometry(), geometry.texture().getPath()))
+                .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
+                        .flatMap(optional -> (Optional<Equippable>) optional)
+                        .flatMap(equippable -> {
+                            EquipmentAssetManager equipmentAssets = ((EntityRenderDispatcherAccessor) Minecraft.getInstance().getEntityRenderDispatcher()).getEquipmentAssets();
+                            return equippable.assetId().map(asset -> Pair.of(equippable.slot(), equipmentAssets.get(asset)));
+                        })
+                        .filter(assetInfo -> assetInfo.getSecond() != EquipmentAssetManager.MISSING)
+                        .map(assetInfo -> assetInfo
+                                .mapSecond(info -> info.getLayers(getLayer(assetInfo.getFirst()))))
+                        .filter(assetInfo -> !assetInfo.getSecond().isEmpty())
+                        .map(assetInfo -> {
+                            ResourceLocation texture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
+                            textureConsumer.accept(texture);
+                            return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), texture.getPath());
+                        }));
     }
 
     private static EquipmentClientInfo.LayerType getLayer(EquipmentSlot slot) {
