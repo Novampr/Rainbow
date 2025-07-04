@@ -72,9 +72,20 @@ public class BedrockPack {
     }
 
     public Optional<Boolean> map(ItemStack stack) {
-        if (stack.isEmpty() || !modelsMapped.add(stack.get(DataComponents.ITEM_MODEL))) {
+        if (stack.isEmpty()) {
             return Optional.empty();
         }
+
+        Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
+        //noinspection OptionalAssignedToNull - annoying Mojang
+        if (patchedModel == null || patchedModel.isEmpty()) {
+            return Optional.empty();
+        }
+        ResourceLocation model = patchedModel.get();
+        if (!modelsMapped.add(model)) {
+            return Optional.empty();
+        }
+
         AtomicBoolean problems = new AtomicBoolean();
         ProblemReporter mapReporter = new ProblemReporter() {
 
@@ -90,7 +101,7 @@ public class BedrockPack {
             }
         };
 
-        mappings.map(stack, mapReporter, mapping -> {
+        mappings.map(stack, model, mapReporter, mapping -> {
             // TODO a proper way to get texture from item model
             itemTextures.withItemTexture(mapping, mapping.bedrockIdentifier().getPath());
             ResourceLocation texture = mapping.bedrockIdentifier();

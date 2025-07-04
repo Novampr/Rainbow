@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.geysermc.packgenerator.PackManager;
+import org.geysermc.packgenerator.mapper.InventoryMapper;
 import org.geysermc.packgenerator.mapper.ItemSuggestionProvider;
 import org.geysermc.packgenerator.mapper.PackMapper;
 
@@ -68,17 +69,33 @@ public class PackGeneratorCommand {
                         })
                 )
                 .then(ClientCommandManager.literal("auto")
-                        .then(ClientCommandManager.argument("suggestions", CommandSuggestionsArgumentType.TYPE)
+                        .then(ClientCommandManager.literal("command")
+                                .then(ClientCommandManager.argument("suggestions", CommandSuggestionsArgumentType.TYPE)
+                                        .executes(context -> {
+                                            Pair<String, CompletableFuture<Suggestions>> suggestions = CommandSuggestionsArgumentType.getSuggestions(context, "suggestions");
+                                            String baseCommand = suggestions.getFirst();
+                                            suggestions.getSecond().thenAccept(completed -> {
+                                                ItemSuggestionProvider provider = new ItemSuggestionProvider(completed.getList().stream()
+                                                        .map(suggestion -> baseCommand.substring(0, suggestion.getRange().getStart()) + suggestion.getText())
+                                                        .toList());
+                                                packMapper.setItemProvider(provider);
+                                                context.getSource().sendFeedback(Component.literal("Running " + provider.queueSize() + " commands to obtain custom items to map"));
+                                            });
+                                            return 0;
+                                        })
+                                )
+                        )
+                        .then(ClientCommandManager.literal("inventory")
                                 .executes(context -> {
-                                    Pair<String, CompletableFuture<Suggestions>> suggestions = CommandSuggestionsArgumentType.getSuggestions(context, "suggestions");
-                                    String baseCommand = suggestions.getFirst();
-                                    suggestions.getSecond().thenAccept(completed -> {
-                                        ItemSuggestionProvider provider = new ItemSuggestionProvider(completed.getList().stream()
-                                                .map(suggestion -> baseCommand.substring(0, suggestion.getRange().getStart()) + suggestion.getText())
-                                                .toList());
-                                        packMapper.setItemProvider(provider);
-                                        context.getSource().sendFeedback(Component.literal("Running " + provider.queueSize() + " commands to obtain custom items to map"));
-                                    });
+                                    packMapper.setItemProvider(InventoryMapper.INSTANCE);
+                                    context.getSource().sendFeedback(Component.literal("Now watching inventories for custom items to map"));
+                                    return 0;
+                                })
+                        )
+                        .then(ClientCommandManager.literal("stop")
+                                .executes(context -> {
+                                    packMapper.setItemProvider(null);
+                                    context.getSource().sendFeedback(Component.literal("Stopped automatic mapping of custom items"));
                                     return 0;
                                 })
                         )

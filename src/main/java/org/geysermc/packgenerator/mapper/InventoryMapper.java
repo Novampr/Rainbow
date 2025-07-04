@@ -7,13 +7,13 @@ import net.minecraft.world.item.ItemStack;
 import java.util.stream.Stream;
 
 public class InventoryMapper implements CustomItemProvider {
+    public static final InventoryMapper INSTANCE = new InventoryMapper();
 
-    public InventoryMapper() {
-    }
+    private InventoryMapper() {}
 
     @Override
     public Stream<ItemStack> nextItems(LocalPlayer player, ClientPacketListener connection) {
-        return Stream.empty();
+        return player.containerMenu.getItems().stream();
     }
 
     @Override

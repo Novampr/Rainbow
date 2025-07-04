@@ -13,8 +13,8 @@ public class PackMapper {
     private final PackManager packManager;
     private CustomItemProvider itemProvider;
 
-    public PackMapper(PackManager manager) {
-        this.manager = manager;
+    public PackMapper(PackManager packManager) {
+        this.packManager = packManager;
     }
 
     public void setItemProvider(CustomItemProvider itemProvider) {

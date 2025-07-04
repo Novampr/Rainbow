@@ -74,14 +74,7 @@ public class GeyserMappings {
         return mappings.size();
     }
 
-    public void map(ItemStack stack, ProblemReporter reporter, Consumer<GeyserSingleDefinition> mappingConsumer) {
-        Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
-        //noinspection OptionalAssignedToNull - annoying Mojang
-        if (patchedModel == null || patchedModel.isEmpty()) {
-            return;
-        }
-
-        ResourceLocation model = patchedModel.get();
+    public void map(ItemStack stack, ResourceLocation model, ProblemReporter reporter, Consumer<GeyserSingleDefinition> mappingConsumer) {
         String displayName = stack.getHoverName().getString();
         int protectionValue = 0; // TODO check the attributes
 
