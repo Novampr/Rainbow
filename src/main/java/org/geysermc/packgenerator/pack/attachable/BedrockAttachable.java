@@ -28,6 +28,11 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
             ).apply(instance, BedrockAttachable::new)
     );
 
+    public void save(Path attachablesDirectory) throws IOException {
+        // Get a safe attachable path by using Geyser's way of getting icons
+        CodecUtil.trySaveJson(CODEC, this, attachablesDirectory.resolve(GeyserSingleDefinition.iconFromResourceLocation(info.identifier) + ".json"));
+    }
+
     public static Builder builder(ResourceLocation identifier) {
         return new Builder(identifier);
     }
@@ -49,11 +54,6 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
                 .withScript("parent_setup", script)
                 .withRenderController(VanillaRenderControllers.ARMOR)
                 .build();
-    }
-
-    public void save(Path attachablesPath) throws IOException {
-        // Get a safe attachable path by using Geyser's way of getting icons
-        CodecUtil.trySaveJson(CODEC, this, attachablesPath.resolve(GeyserSingleDefinition.iconFromResourceLocation(info.identifier) + ".json"));
     }
 
     public static class Builder {
