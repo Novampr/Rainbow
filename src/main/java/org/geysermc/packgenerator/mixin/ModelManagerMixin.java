@@ -27,6 +27,7 @@ public abstract class ModelManagerMixin implements PreparableReloadListener, Aut
         Object resolved = original.call(instance);
         try {
             // Couldn't be bothered setting up access wideners, this resolves the second component of the ResolvedModels record, which is called "models"
+            // Ideally we'd somehow use the "this" instance, but that's not possible here since the lambda we inject into is a static one
             ((ModelManagerMixin) (Object) Minecraft.getInstance().getModelManager()).unbakedResolvedModels = (Map<ResourceLocation, ResolvedModel>) resolved.getClass().getRecordComponents()[1].getAccessor().invoke(resolved);
         } catch (IllegalAccessException | InvocationTargetException | ClassCastException exception) {
             throw new RuntimeException(exception);

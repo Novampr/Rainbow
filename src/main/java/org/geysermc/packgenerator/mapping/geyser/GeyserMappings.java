@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -74,19 +75,19 @@ public class GeyserMappings {
         return mappings.size();
     }
 
-    public void map(ItemStack stack, ResourceLocation model, ProblemReporter reporter, Consumer<GeyserSingleDefinition> mappingConsumer) {
+    public void map(ItemStack stack, ResourceLocation model, ProblemReporter reporter, BiConsumer<GeyserSingleDefinition, ResourceLocation> mappingTextureConsumer) {
         String displayName = stack.getHoverName().getString();
         int protectionValue = 0; // TODO check the attributes
 
-        GeyserItemMapper.mapItem(model, displayName, protectionValue, stack.getComponentsPatch(), reporter)
-                .forEach(mapping -> {
+        GeyserItemMapper.mapItem(model, displayName, protectionValue, stack.getComponentsPatch(), reporter,
+                (mapping, texture) -> {
                     try {
                         map(stack.getItemHolder(), mapping);
                     } catch (IllegalArgumentException exception) {
                         reporter.forChild(() -> "mapping with bedrock identifier " + mapping.bedrockIdentifier() + " ").report(() -> "failed to add mapping to mappings file: " + exception.getMessage());
                         return;
                     }
-                    mappingConsumer.accept(mapping);
+                    mappingTextureConsumer.accept(mapping, texture);
                 });
     }
 

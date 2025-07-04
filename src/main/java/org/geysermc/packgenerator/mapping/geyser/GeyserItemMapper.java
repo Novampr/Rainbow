@@ -16,6 +16,8 @@ import net.minecraft.client.renderer.item.properties.select.Charge;
 import net.minecraft.client.renderer.item.properties.select.ContextDimension;
 import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -34,49 +36,56 @@ import org.geysermc.packgenerator.mixin.SelectItemModelAccessor;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class GeyserItemMapper {
+    private static final List<ResourceLocation> HANDHELD_MODELS = Stream.of("item/handheld", "item/handheld_rod", "item/handheld_mace")
+            .map(ResourceLocation::withDefaultNamespace)
+            .toList();
 
-    public static Stream<GeyserSingleDefinition> mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch,
-                                                         ProblemReporter reporter) {
+    public static void mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch, ProblemReporter reporter,
+                               BiConsumer<GeyserSingleDefinition, ResourceLocation> mappingTextureConsumer) {
         ItemModel model = Minecraft.getInstance().getModelManager().getItemModel(modelLocation);
-        MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch, reporter.forChild(() -> "client item definition " + modelLocation + " "));
-        return mapItem(model, context);
+        MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch, reporter.forChild(() -> "client item definition " + modelLocation + " "), mappingTextureConsumer);
+        mapItem(model, context);
     }
 
-    private static Stream<GeyserSingleDefinition> mapItem(ItemModel model, MappingContext context) {
+    private static void mapItem(ItemModel model, MappingContext context) {
         switch (model) {
             case BlockModelWrapper modelWrapper -> {
                 ResourceLocation itemModelLocation = ((BlockModelWrapperLocationAccessor) modelWrapper).geyser_mappings_generator$getModelOrigin();
 
-                return ((ResolvedModelAccessor) Minecraft.getInstance().getModelManager()).geyser_mappings_generator$getResolvedModel(itemModelLocation)
-                        .map(itemModel -> {
+                ((ResolvedModelAccessor) Minecraft.getInstance().getModelManager()).geyser_mappings_generator$getResolvedModel(itemModelLocation)
+                        .ifPresentOrElse(itemModel -> {
+                            ResolvedModel parentModel = itemModel.parent();
+                            boolean handheld = false;
+                            if (parentModel != null) {
+                                // debugName() returns the resource location of the model as a string
+                                handheld = HANDHELD_MODELS.contains(ResourceLocation.parse(parentModel.debugName()));
+                            }
+
                             ResourceLocation bedrockIdentifier = itemModelLocation;
                             if (bedrockIdentifier.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
                                 bedrockIdentifier = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModelLocation.getPath());
                             }
-                            return Stream.of(context.create(bedrockIdentifier));
-                        })
-                        .orElseGet(() -> {
-                            context.reporter.report(() -> "missing block model " + itemModelLocation);
-                            return Stream.empty();
-                        });
+
+                            ResourceLocation texture = itemModelLocation;
+                            Material layer0Texture = itemModel.getTopTextureSlots().getMaterial("layer0");
+                            if (layer0Texture != null) {
+                                texture = layer0Texture.texture();
+                            }
+                            context.create(bedrockIdentifier, texture, handheld);
+                        }, () -> context.reporter.report(() -> "missing block model " + itemModelLocation));
             }
-            case ConditionalItemModel conditional -> {
-                return mapConditionalModel(conditional, context.child("condition " + conditional + " "));
-            }
-            case SelectItemModel<?> select -> {
-                return mapSelectModel(select, context.child("select " + select + " "));
-            }
-            default -> {}
+            case ConditionalItemModel conditional -> mapConditionalModel(conditional, context.child("condition " + conditional + " "));
+            case SelectItemModel<?> select -> mapSelectModel(select, context.child("select " + select + " "));
+            default -> context.reporter.report(() -> "unable to map item model " + model.getClass());
         }
-        context.reporter.report(() -> "unable to map item model " + model.getClass());
-        return Stream.empty();
     }
 
-    private static Stream<GeyserSingleDefinition> mapConditionalModel(ConditionalItemModel model, MappingContext context) {
+    private static void mapConditionalModel(ConditionalItemModel model, MappingContext context) {
         ItemModelPropertyTest property = ((ConditionalItemModelAccessor) model).getProperty();
         GeyserConditionPredicate.Property predicateProperty = switch (property) {
             case Broken ignored -> GeyserConditionPredicate.BROKEN;
@@ -88,19 +97,17 @@ public class GeyserItemMapper {
         };
         if (predicateProperty == null) {
             context.reporter.report(() -> "unsupported conditional model property " + property);
-            return Stream.empty();
+            return;
         }
 
         ItemModel onTrue = ((ConditionalItemModelAccessor) model).getOnTrue();
         ItemModel onFalse = ((ConditionalItemModelAccessor) model).getOnFalse();
 
-        return Stream.concat(
-                mapItem(onTrue, context.with(new GeyserConditionPredicate(predicateProperty, true), "condition on true ")),
-                mapItem(onFalse, context.with(new GeyserConditionPredicate(predicateProperty, false), "condition on false "))
-        );
+        mapItem(onTrue, context.with(new GeyserConditionPredicate(predicateProperty, true), "condition on true "));
+        mapItem(onFalse, context.with(new GeyserConditionPredicate(predicateProperty, false), "condition on false "));
     }
 
-    private static <T> Stream<GeyserSingleDefinition> mapSelectModel(SelectItemModel<T> model, MappingContext context) {
+    private static <T> void mapSelectModel(SelectItemModel<T> model, MappingContext context) {
         //noinspection unchecked
         SelectItemModelProperty<T> property = ((SelectItemModelAccessor<T>) model).getProperty();
         Function<T, GeyserMatchPredicate.MatchPredicateData> dataConstructor = switch (property) {
@@ -113,34 +120,31 @@ public class GeyserItemMapper {
         };
         if (dataConstructor == null) {
             context.reporter.report(() -> "unsupported select model property " + property);
-            return Stream.empty();
+            return;
         }
 
         //noinspection unchecked
         Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).geyser_mappings_generator$getCases();
-        return Stream.concat(
-                cases.entrySet().stream()
-                        .flatMap(caze -> mapItem(caze.getValue(), context.with(new GeyserMatchPredicate(dataConstructor.apply(caze.getKey())), "select case " + caze.getKey() + " "))),
-                mapItem(cases.defaultReturnValue(), context.child("default case "))
-        );
+
+        cases.entrySet().forEach(caze -> mapItem(caze.getValue(), context.with(new GeyserMatchPredicate(dataConstructor.apply(caze.getKey())), "select case " + caze.getKey() + " ")));
+        mapItem(cases.defaultReturnValue(), context.child("default case "));
     }
 
-    private record MappingContext(List<GeyserPredicate> predicateStack, ResourceLocation model, String displayName, int protectionValue, DataComponentPatch componentPatch,
-                                  ProblemReporter reporter) {
+    private record MappingContext(List<GeyserPredicate> predicateStack, ResourceLocation model, String displayName, int protectionValue, DataComponentPatch componentPatch, ProblemReporter reporter,
+                                  BiConsumer<GeyserSingleDefinition, ResourceLocation> mappingTextureConsumer) {
 
         public MappingContext with(GeyserPredicate predicate, String childName) {
             return new MappingContext(Stream.concat(predicateStack.stream(), Stream.of(predicate)).toList(), model, displayName, protectionValue, componentPatch,
-                    reporter.forChild(() -> childName));
+                    reporter.forChild(() -> childName), mappingTextureConsumer);
         }
 
         public MappingContext child(String childName)  {
-            return new MappingContext(predicateStack, model, displayName, protectionValue, componentPatch, reporter.forChild(() -> childName));
+            return new MappingContext(predicateStack, model, displayName, protectionValue, componentPatch, reporter.forChild(() -> childName), mappingTextureConsumer);
         }
 
-        public GeyserSingleDefinition create(ResourceLocation bedrockIdentifier) {
-            return new GeyserSingleDefinition(Optional.of(model), bedrockIdentifier, Optional.of(displayName), predicateStack,
-                    new GeyserSingleDefinition.BedrockOptions(Optional.empty(), true, false, protectionValue), // TODO handheld prediction
-                    componentPatch);
+        public void create(ResourceLocation bedrockIdentifier, ResourceLocation texture, boolean displayHandheld) {
+            mappingTextureConsumer.accept(new GeyserSingleDefinition(Optional.of(model), bedrockIdentifier, Optional.of(displayName), predicateStack,
+                    new GeyserSingleDefinition.BedrockOptions(Optional.empty(), true, displayHandheld, protectionValue), componentPatch), texture);
         }
     }
 }

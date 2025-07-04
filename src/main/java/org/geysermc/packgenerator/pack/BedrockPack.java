@@ -101,13 +101,8 @@ public class BedrockPack {
             }
         };
 
-        mappings.map(stack, model, mapReporter, mapping -> {
-            // TODO a proper way to get texture from item model
-            itemTextures.withItemTexture(mapping, mapping.bedrockIdentifier().getPath());
-            ResourceLocation texture = mapping.bedrockIdentifier();
-            if (texture.getNamespace().equals("geyser_mc")) {
-                texture = ResourceLocation.withDefaultNamespace(texture.getPath());
-            }
+        mappings.map(stack, model, mapReporter, (mapping, texture) -> {
+            itemTextures.withItemTexture(mapping, texture.getPath());
             texturesToExport.add(texture);
             AttachableMapper.mapItem(stack, mapping.bedrockIdentifier(), texturesToExport::add).ifPresent(attachables::add);
         });
