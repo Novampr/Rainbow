@@ -1,6 +1,5 @@
 package org.geysermc.packgenerator;
 
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import org.geysermc.packgenerator.pack.BedrockPack;
 
 import java.io.IOException;
@@ -22,6 +21,10 @@ public final class PackManager {
 
     public void run(Consumer<BedrockPack> consumer) {
         currentPack.ifPresent(consumer);
+    }
+
+    public void runOrElse(Consumer<BedrockPack> consumer, Runnable runnable) {
+        currentPack.ifPresentOrElse(consumer, runnable);
     }
 
     public <T> Optional<T> run(Function<BedrockPack, T> function) {

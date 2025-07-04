@@ -5,6 +5,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -15,7 +16,7 @@ public class ItemSuggestionProvider implements CustomItemProvider {
     private boolean waitingOnClear = false;
 
     public ItemSuggestionProvider(List<String> commands) {
-        remainingCommands = commands;
+        remainingCommands = new ArrayList<>(commands);
     }
 
     public Stream<ItemStack> nextItems(LocalPlayer player, ClientPacketListener connection) {
@@ -47,6 +48,6 @@ public class ItemSuggestionProvider implements CustomItemProvider {
 
     @Override
     public boolean isDone() {
-        return remainingCommands.isEmpty();
+        return remainingCommands.isEmpty() && !waitingOnItem && !waitingOnClear;
     }
 }

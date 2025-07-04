@@ -19,12 +19,12 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     private final PackManager packManager = new PackManager();
-    private final PackMapper packMapper = new PackMapper();
+    private final PackMapper packMapper = new PackMapper(packManager);
 
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> PackGeneratorCommand.register(dispatcher, packManager, packMapper));
-        ClientTickEvents.START_CLIENT_TICK.register(minecraft -> packMapper.tick(packManager, minecraft));
+        ClientTickEvents.START_CLIENT_TICK.register(packMapper::tick);
 
         ArgumentTypeRegistry.registerArgumentType(getModdedLocation("command_suggestions"),
                 CommandSuggestionsArgumentType.class, SingletonArgumentInfo.contextFree(CommandSuggestionsArgumentType::new));
