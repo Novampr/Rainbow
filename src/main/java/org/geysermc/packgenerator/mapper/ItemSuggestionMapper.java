@@ -1,22 +1,25 @@
-package org.geysermc.packgenerator.command;
+package org.geysermc.packgenerator.mapper;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
+import org.geysermc.packgenerator.PackManager;
+import org.geysermc.packgenerator.command.PackGeneratorCommand;
 
 import java.util.ArrayList;
 import java.util.List;
 
 // TODO safety
 public final class ItemSuggestionMapper {
-    private static final ItemSuggestionMapper INSTANCE = new ItemSuggestionMapper();
-
+    private final PackManager packManager;
     private final List<String> remainingCommands = new ArrayList<>();
     private boolean waitingOnItem = false;
     private boolean waitingOnClear = false;
     private int mapped = 0;
 
-    private ItemSuggestionMapper() {}
+    public ItemSuggestionMapper(PackManager packManager) {
+        this.packManager = packManager;
+    }
 
     // TODO
     public boolean start(List<String> commands) {
@@ -41,7 +44,7 @@ public final class ItemSuggestionMapper {
                 waitingOnItem = true;
             } else {
                 if (!minecraft.player.getInventory().isEmpty()) {
-                    mapped += PackGeneratorCommand.mapInventory(minecraft.player.getInventory(),
+                    mapped += PackGeneratorCommand.mapInventory(packManager, minecraft.player.getInventory(),
                             component -> minecraft.player.displayClientMessage(component, false), false);
 
                     minecraft.getConnection().send(new ServerboundChatCommandPacket("clear"));
@@ -66,9 +69,5 @@ public final class ItemSuggestionMapper {
         waitingOnItem = false;
         waitingOnClear = false;
         mapped = 0;
-    }
-
-    public static ItemSuggestionMapper getInstance() {
-        return INSTANCE;
     }
 }

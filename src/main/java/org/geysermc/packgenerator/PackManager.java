@@ -8,11 +8,7 @@ import java.util.Optional;
 
 public final class PackManager {
 
-    private static final PackManager INSTANCE = new PackManager();
-
     private BedrockPack currentPack;
-
-    private PackManager() {}
 
     public void startPack(String name) throws IOException {
         if (currentPack != null) {
@@ -39,9 +35,5 @@ public final class PackManager {
         if (currentPack == null) {
             throw new IllegalStateException("Create a new pack first!");
         }
-    }
-
-    public static PackManager getInstance() {
-        return INSTANCE;
     }
 }

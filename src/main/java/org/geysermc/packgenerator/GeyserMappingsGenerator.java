@@ -8,8 +8,8 @@ import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.resources.ResourceLocation;
 import org.geysermc.packgenerator.command.CommandSuggestionsArgumentType;
-import org.geysermc.packgenerator.command.ItemSuggestionMapper;
 import org.geysermc.packgenerator.command.PackGeneratorCommand;
+import org.geysermc.packgenerator.mapper.PackMappers;
 import org.slf4j.Logger;
 
 public class GeyserMappingsGenerator implements ClientModInitializer {
@@ -18,16 +18,19 @@ public class GeyserMappingsGenerator implements ClientModInitializer {
     public static final String MOD_NAME = "Geyser Mappings Generator";
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    private final PackManager packManager = new PackManager();
+    private final PackMappers packMappers = new PackMappers(packManager);
+
     @Override
     public void onInitializeClient() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> PackGeneratorCommand.register(dispatcher));
-        ClientTickEvents.START_CLIENT_TICK.register(minecraft -> ItemSuggestionMapper.getInstance().tick(minecraft));
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> PackGeneratorCommand.register(dispatcher, packManager, packMappers));
+        ClientTickEvents.START_CLIENT_TICK.register(packMappers::tick);
 
         ArgumentTypeRegistry.registerArgumentType(getModdedLocation("command_suggestions"),
                 CommandSuggestionsArgumentType.class, SingletonArgumentInfo.contextFree(CommandSuggestionsArgumentType::new));
     }
 
-    public ResourceLocation getModdedLocation(String path) {
+    public static ResourceLocation getModdedLocation(String path) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 }
