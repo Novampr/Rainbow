@@ -130,12 +130,13 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         );
     }
 
-    public record Bone(String name, Optional<String> parent, Vector3f pivot, Vector3f rotation, boolean mirror,
-                       float inflate, List<Cube> cubes) {
+    public record Bone(String name, Optional<String> parent, Optional<String> binding, Vector3f pivot, Vector3f rotation,
+                       boolean mirror, float inflate, List<Cube> cubes) {
         public static final Codec<Bone> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         Codec.STRING.fieldOf("name").forGetter(Bone::name),
                         Codec.STRING.optionalFieldOf("parent").forGetter(Bone::parent),
+                        Codec.STRING.optionalFieldOf("binding").forGetter(Bone::binding),
                         ExtraCodecs.VECTOR3F.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Bone::pivot),
                         ExtraCodecs.VECTOR3F.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Bone::rotation),
                         Codec.BOOL.optionalFieldOf("mirror", false).forGetter(Bone::mirror),
@@ -149,6 +150,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
             private final List<Cube> cubes = new ArrayList<>();
 
             private Optional<String> parent = Optional.empty();
+            private Optional<String> binding = Optional.empty();
             private Vector3f pivot = VECTOR3F_ZERO;
             private Vector3f rotation = VECTOR3F_ZERO;
             private boolean mirror = false;
@@ -160,6 +162,11 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
 
             public Builder withParent(String parent) {
                 this.parent = Optional.of(parent);
+                return this;
+            }
+
+            public Builder withBinding(String binding) {
+                this.binding = Optional.of(binding);
                 return this;
             }
 
@@ -193,7 +200,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
             }
 
             public Bone build() {
-                return new Bone(name, parent, pivot, rotation, mirror, inflate, List.copyOf(cubes));
+                return new Bone(name, parent, binding, pivot, rotation, mirror, inflate, List.copyOf(cubes));
             }
         }
     }
