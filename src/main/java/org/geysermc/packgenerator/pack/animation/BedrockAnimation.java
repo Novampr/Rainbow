@@ -72,10 +72,10 @@ public record BedrockAnimation(BedrockVersion formatVersion, Map<String, Animati
             private final Map<String, SimpleAnimation> bones = new HashMap<>();
 
             private LoopMode loopMode = LoopMode.STOP;
-            private Optional<String> startDelay;
-            private Optional<String> loopDelay;
-            private Optional<String> animationTimeUpdate;
-            private Optional<String> blendWeight;
+            private Optional<String> startDelay = Optional.empty();
+            private Optional<String> loopDelay = Optional.empty();
+            private Optional<String> animationTimeUpdate = Optional.empty();
+            private Optional<String> blendWeight = Optional.empty();
             private boolean overridePreviousAnimation;
 
             public Builder withLoopMode(LoopMode loopMode) {

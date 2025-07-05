@@ -33,6 +33,7 @@ public class BedrockPack {
     private static final Path PACK_DIRECTORY = Path.of("pack");
     private static final Path ATTACHABLES_DIRECTORY = Path.of("attachables");
     private static final Path GEOMETRY_DIRECTORY = Path.of("models/entity");
+    private static final Path ANIMATION_DIRECTORY = Path.of("animations");
 
     private static final Path MAPPINGS_FILE = Path.of("geyser_mappings.json");
     private static final Path MANIFEST_FILE = Path.of("manifest.json");
@@ -121,7 +122,7 @@ public class BedrockPack {
         }
         for (BedrockItem item : bedrockItems) {
             try {
-                item.save(packPath.resolve(ATTACHABLES_DIRECTORY), packPath.resolve(GEOMETRY_DIRECTORY));
+                item.save(packPath.resolve(ATTACHABLES_DIRECTORY), packPath.resolve(GEOMETRY_DIRECTORY), packPath.resolve(ANIMATION_DIRECTORY));
             } catch (IOException exception) {
                 reporter.forChild(() -> "files for bedrock item " + item.identifier() + " ").report(() -> "failed to save to pack: " + exception);
                 success = false;

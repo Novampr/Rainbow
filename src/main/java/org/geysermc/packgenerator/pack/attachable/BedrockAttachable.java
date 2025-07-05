@@ -44,7 +44,7 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
         return new Builder(identifier);
     }
 
-    public static BedrockAttachable equipment(ResourceLocation identifier, EquipmentSlot slot, String texture) {
+    public static BedrockAttachable.Builder equipment(ResourceLocation identifier, EquipmentSlot slot, String texture) {
         String script = switch (slot) {
             case HEAD -> "v.helmet_layer_visible = 0.0;";
             case CHEST -> "v.chest_layer_visible = 0.0;";
@@ -59,20 +59,17 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
                 .withTexture(DisplaySlot.ENCHANTED, VanillaTextures.ENCHANTED_ACTOR_GLINT)
                 .withGeometry(DisplaySlot.DEFAULT, VanillaGeometries.fromEquipmentSlot(slot))
                 .withScript("parent_setup", script)
-                .withRenderController(VanillaRenderControllers.ARMOR)
-                .build();
+                .withRenderController(VanillaRenderControllers.ARMOR);
     }
 
-    public static BedrockAttachable geometry(ResourceLocation identifier, BedrockGeometry.GeometryDefinition geometry, String texture) {
-        // TODO animations to make it look right
+    public static BedrockAttachable.Builder geometry(ResourceLocation identifier, BedrockGeometry.GeometryDefinition geometry, String texture) {
         return builder(identifier)
                 .withMaterial(DisplaySlot.DEFAULT, VanillaMaterials.ENTITY)
                 .withMaterial(DisplaySlot.ENCHANTED, VanillaMaterials.ENTITY_ALPHATEST_GLINT)
                 .withTexture(DisplaySlot.DEFAULT, texture)
                 .withTexture(DisplaySlot.ENCHANTED, VanillaTextures.ENCHANTED_ITEM_GLINT)
                 .withGeometry(DisplaySlot.DEFAULT, geometry.info().identifier())
-                .withRenderController(VanillaRenderControllers.ITEM_DEFAULT)
-                .build();
+                .withRenderController(VanillaRenderControllers.ITEM_DEFAULT);
     }
 
     public static class Builder {

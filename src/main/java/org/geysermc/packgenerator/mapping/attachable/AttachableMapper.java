@@ -9,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
+import org.geysermc.packgenerator.mapping.animation.BedrockAnimationContext;
 import org.geysermc.packgenerator.mapping.geometry.BedrockGeometryContext;
 import org.geysermc.packgenerator.mixin.EntityRenderDispatcherAccessor;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
@@ -20,7 +21,7 @@ import java.util.function.Consumer;
 public class AttachableMapper {
 
     public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, Optional<BedrockGeometryContext> customGeometry,
-                                                      Consumer<ResourceLocation> textureConsumer) {
+                                                      Optional<BedrockAnimationContext> animations, Consumer<ResourceLocation> textureConsumer) {
         // Crazy optional statement
         // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
         return customGeometry
@@ -39,7 +40,16 @@ public class AttachableMapper {
                             ResourceLocation texture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
                             textureConsumer.accept(texture);
                             return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), texture.getPath());
-                        }));
+                        }))
+                .map(attachable -> {
+                    animations.ifPresent(context -> {
+                        attachable.withAnimation("first_person", context.firstPerson());
+                        attachable.withAnimation("third_person", context.thirdPerson());
+                        attachable.withScript("animate", "first_person", "context.is_first_person == 1.0");
+                        attachable.withScript("animate", "third_person", "context.is_first_person == 0.0");
+                    });
+                    return attachable.build();
+                });
     }
 
     private static EquipmentClientInfo.LayerType getLayer(EquipmentSlot slot) {

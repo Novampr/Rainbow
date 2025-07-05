@@ -89,6 +89,7 @@ public record GeyserSingleDefinition(Optional<ResourceLocation> model, ResourceL
         public static final BedrockOptions DEFAULT = new BedrockOptions(Optional.empty(), true, false, 0);
     }
 
+    // TODO this method is used in other places too now, maybe move it
     public static String iconFromResourceLocation(ResourceLocation location) {
         return location.toString().replace(':', '.').replace('/', '_');
     }

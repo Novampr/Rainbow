@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 
 public class CodecUtil {
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     public static <O, T> RecordCodecBuilder<O, T> unitVerifyCodec(Codec<T> codec, String field, T value) {
         return codec.validate(read -> {

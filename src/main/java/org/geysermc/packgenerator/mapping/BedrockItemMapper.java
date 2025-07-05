@@ -30,6 +30,8 @@ import net.minecraft.world.level.Level;
 import org.geysermc.packgenerator.accessor.BlockModelWrapperLocationAccessor;
 import org.geysermc.packgenerator.accessor.ResolvedModelAccessor;
 import org.geysermc.packgenerator.accessor.SelectItemModelCasesAccessor;
+import org.geysermc.packgenerator.mapping.animation.AnimationMapper;
+import org.geysermc.packgenerator.mapping.animation.BedrockAnimationContext;
 import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geometry.BedrockGeometryContext;
 import org.geysermc.packgenerator.mapping.geometry.GeometryMapper;
@@ -150,7 +152,7 @@ public class BedrockItemMapper {
         //noinspection unchecked
         Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).geyser_mappings_generator$getCases();
 
-        cases.entrySet().forEach(caze -> mapItem(caze.getValue(), context.with(new GeyserMatchPredicate(dataConstructor.apply(caze.getKey())), "select case " + caze.getKey() + " ")));
+        cases.forEach((key, value) -> mapItem(value, context.with(new GeyserMatchPredicate(dataConstructor.apply(key)), "select case " + key + " ")));
         mapItem(cases.defaultReturnValue(), context.child("default case "));
     }
 
@@ -179,10 +181,13 @@ public class BedrockItemMapper {
 
             // TODO Should probably get a better way to get geometry texture
             Optional<BedrockGeometry> bedrockGeometry = customGeometry.map(geometry -> GeometryMapper.mapGeometry(definition.textureName(), geometry));
-            Optional<BedrockGeometryContext> geometryInfo = bedrockGeometry.map(geometry -> new BedrockGeometryContext(geometry.definitions().getFirst(), texture));
+            Optional<BedrockGeometryContext> geometryContext = bedrockGeometry.map(geometry -> new BedrockGeometryContext(geometry.definitions().getFirst(), texture));
+            Optional<BedrockAnimationContext> animationContext = geometryContext.map(
+                    geometry -> AnimationMapper.mapAnimation(definition.textureName(), geometry.geometry().bones().getFirst().name(), null));
 
             itemConsumer.accept(new BedrockItem(bedrockIdentifier, definition.textureName(), texture,
-                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, geometryInfo, additionalTextureConsumer), bedrockGeometry));
+                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, geometryContext, animationContext, additionalTextureConsumer),
+                    bedrockGeometry, animationContext.map(BedrockAnimationContext::animation)));
         }
     }
 }
