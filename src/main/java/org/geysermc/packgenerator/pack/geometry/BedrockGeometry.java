@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+// TODO make vectors immutable
 public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinition> definitions) {
     public static final BedrockVersion FORMAT_VERSION = BedrockVersion.of(1, 21, 0);
     public static final Vector3f VECTOR3F_ZERO = new Vector3f();
