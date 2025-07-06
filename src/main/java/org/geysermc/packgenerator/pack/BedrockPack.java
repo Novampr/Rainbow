@@ -101,9 +101,11 @@ public class BedrockPack {
             }
         };
 
-        BedrockItemMapper.tryMapStack(stack, model, mapReporter, mappings, bedrockItem -> {
+        BedrockItemMapper.tryMapStack(stack, model, mapReporter, mappings, packPath, bedrockItem -> {
             itemTextures.withItemTexture(bedrockItem);
-            texturesToExport.add(bedrockItem.texture());
+            if (bedrockItem.exportTexture()) {
+                texturesToExport.add(bedrockItem.texture());
+            }
             bedrockItems.add(bedrockItem);
         }, texturesToExport::add);
         return Optional.of(problems.get());

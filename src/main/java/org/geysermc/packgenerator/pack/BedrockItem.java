@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 
-public record BedrockItem(ResourceLocation identifier, String textureName, ResourceLocation texture, Optional<BedrockAttachable> attachable,
+public record BedrockItem(ResourceLocation identifier, String textureName, ResourceLocation texture, boolean exportTexture, Optional<BedrockAttachable> attachable,
                           Optional<BedrockGeometry> geometry, Optional<BedrockAnimation> animation) {
 
     public void save(Path attachableDirectory, Path geometryDirectory, Path animationDirectory) throws IOException {

@@ -2,7 +2,6 @@ package org.geysermc.packgenerator.mapping;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.SimpleUnbakedGeometry;
 import net.minecraft.client.renderer.item.BlockModelWrapper;
 import net.minecraft.client.renderer.item.ConditionalItemModel;
 import net.minecraft.client.renderer.item.ItemModel;
@@ -20,11 +19,13 @@ import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
 import org.geysermc.packgenerator.accessor.BlockModelWrapperLocationAccessor;
@@ -35,6 +36,7 @@ import org.geysermc.packgenerator.mapping.animation.BedrockAnimationContext;
 import org.geysermc.packgenerator.mapping.attachable.AttachableMapper;
 import org.geysermc.packgenerator.mapping.geometry.BedrockGeometryContext;
 import org.geysermc.packgenerator.mapping.geometry.GeometryMapper;
+import org.geysermc.packgenerator.mapping.geometry.GeometryRenderer;
 import org.geysermc.packgenerator.mapping.geyser.GeyserMappings;
 import org.geysermc.packgenerator.mapping.geyser.GeyserSingleDefinition;
 import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserConditionPredicate;
@@ -43,8 +45,9 @@ import org.geysermc.packgenerator.mapping.geyser.predicate.GeyserPredicate;
 import org.geysermc.packgenerator.mixin.ConditionalItemModelAccessor;
 import org.geysermc.packgenerator.mixin.SelectItemModelAccessor;
 import org.geysermc.packgenerator.pack.BedrockItem;
-import org.geysermc.packgenerator.pack.geometry.BedrockGeometry;
+import org.geysermc.packgenerator.pack.BedrockTextures;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -57,19 +60,19 @@ public class BedrockItemMapper {
             .toList();
 
     public static void tryMapStack(ItemStack stack, ResourceLocation model, ProblemReporter reporter,
-                                   GeyserMappings mappings, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
+                                   GeyserMappings mappings, Path packPath, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
         String displayName = stack.getHoverName().getString();
         int protectionValue = 0; // TODO check the attributes
 
         mapItem(model, displayName, protectionValue, stack.getComponentsPatch(), reporter,
-                mapping -> mappings.map(stack.getItemHolder(), mapping), itemConsumer, additionalTextureConsumer);
+                mapping -> mappings.map(stack.getItemHolder(), mapping), packPath, itemConsumer, additionalTextureConsumer);
     }
 
     public static void mapItem(ResourceLocation modelLocation, String displayName, int protectionValue, DataComponentPatch componentPatch, ProblemReporter reporter,
-                               Consumer<GeyserSingleDefinition> mappingConsumer, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
+                               Consumer<GeyserSingleDefinition> mappingConsumer, Path packPath, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
         ItemModel model = Minecraft.getInstance().getModelManager().getItemModel(modelLocation);
         MappingContext context = new MappingContext(List.of(), modelLocation, displayName, protectionValue, componentPatch,
-                reporter.forChild(() -> "client item definition " + modelLocation + " "), mappingConsumer, itemConsumer, additionalTextureConsumer);
+                reporter.forChild(() -> "client item definition " + modelLocation + " "), mappingConsumer, itemConsumer, packPath, additionalTextureConsumer);
         mapItem(model, context);
     }
 
@@ -157,15 +160,17 @@ public class BedrockItemMapper {
     }
 
     private record MappingContext(List<GeyserPredicate> predicateStack, ResourceLocation model, String displayName, int protectionValue, DataComponentPatch componentPatch, ProblemReporter reporter,
-                                  Consumer<GeyserSingleDefinition> mappingConsumer, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
+                                  Consumer<GeyserSingleDefinition> mappingConsumer, BedrockItemConsumer itemConsumer, Path packPath,
+                                  Consumer<ResourceLocation> additionalTextureConsumer) {
 
         public MappingContext with(GeyserPredicate predicate, String childName) {
             return new MappingContext(Stream.concat(predicateStack.stream(), Stream.of(predicate)).toList(), model, displayName, protectionValue, componentPatch,
-                    reporter.forChild(() -> childName), mappingConsumer, itemConsumer, additionalTextureConsumer);
+                    reporter.forChild(() -> childName), mappingConsumer, itemConsumer, packPath, additionalTextureConsumer);
         }
 
         public MappingContext child(String childName)  {
-            return new MappingContext(predicateStack, model, displayName, protectionValue, componentPatch, reporter.forChild(() -> childName), mappingConsumer, itemConsumer, additionalTextureConsumer);
+            return new MappingContext(predicateStack, model, displayName, protectionValue, componentPatch, reporter.forChild(() -> childName),
+                    mappingConsumer, itemConsumer, packPath, additionalTextureConsumer);
         }
 
         public void create(ResourceLocation bedrockIdentifier, ResourceLocation texture, boolean displayHandheld,
@@ -182,10 +187,22 @@ public class BedrockItemMapper {
             // TODO Should probably get a better way to get geometry texture
             String safeIdentifier = definition.textureName();
             String bone = "bone";
-            Optional<BedrockGeometryContext> bedrockGeometry = customModel.map(model -> GeometryMapper.mapGeometry(safeIdentifier, bone, model, texture));
+            ResourceLocation geometryTexture = texture;
+            Optional<BedrockGeometryContext> bedrockGeometry = customModel.map(model -> GeometryMapper.mapGeometry(safeIdentifier, bone, model, geometryTexture));
             Optional<BedrockAnimationContext> bedrockAnimation = customModel.map(model -> AnimationMapper.mapAnimation(safeIdentifier, bone, model.getTopTransforms()));
 
-            itemConsumer.accept(new BedrockItem(bedrockIdentifier, definition.textureName(), texture,
+            boolean exportTexture = true;
+            if (customModel.isPresent()) {
+                ItemStack fakeItem = new ItemStack(Items.FLINT);
+                fakeItem.set(DataComponents.ITEM_MODEL, model);
+
+                texture = texture.withPath(path -> path + "_icon");
+                GeometryRenderer.render(fakeItem, packPath.resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png"));
+                exportTexture = false;
+                additionalTextureConsumer.accept(geometryTexture);
+            }
+
+            itemConsumer.accept(new BedrockItem(bedrockIdentifier, definition.textureName(), texture, exportTexture,
                     AttachableMapper.mapItem(componentPatch, bedrockIdentifier, bedrockGeometry, bedrockAnimation, additionalTextureConsumer),
                     bedrockGeometry.map(BedrockGeometryContext::geometry), bedrockAnimation.map(BedrockAnimationContext::animation)));
         }

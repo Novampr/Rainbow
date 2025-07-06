@@ -14,6 +14,7 @@ import net.minecraft.client.gui.render.state.pip.OversizedItemRenderState;
 import net.minecraft.client.renderer.item.TrackingItemStackRenderState;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.mixin.PictureInPictureRendererAccessor;
 import org.geysermc.packgenerator.render.PictureInPictureCopyRenderer;
 import org.joml.Matrix3x2fStack;
@@ -22,6 +23,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Objects;
 
+// TODO maybe just use this even for normal 2D items, not sure, could be useful for composite models and stuff
+// TODO output in a size bedrock likes
 public class GeometryRenderer {
 
     public static void render(ItemStack stack, Path path) {
@@ -62,6 +65,7 @@ public class GeometryRenderer {
                         }
                     }
 
+                    CodecUtil.ensureDirectoryExists(path.getParent());
                     nativeImage.writeToFile(path);
                 } catch (IOException var19) {
                     // TODO
