@@ -4,11 +4,11 @@ import com.mojang.math.Quadrant;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Direction;
-import net.minecraft.util.ExtraCodecs;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.pack.BedrockVersion;
-import org.joml.Vector2f;
+import org.joml.Vector2fc;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -19,10 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-// TODO make vectors immutable
 public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinition> definitions) {
     public static final BedrockVersion FORMAT_VERSION = BedrockVersion.of(1, 21, 0);
-    public static final Vector3f VECTOR3F_ZERO = new Vector3f();
+    // TODO move to util
+    public static final Vector3fc VECTOR3F_ZERO = new Vector3f();
 
     public static final Codec<BedrockGeometry> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
@@ -47,7 +47,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         return new Bone.Builder(name);
     }
 
-    public static Cube.Builder cube(Vector3f origin, Vector3f size) {
+    public static Cube.Builder cube(Vector3fc origin, Vector3fc size) {
         return new Cube.Builder(origin, size);
     }
 
@@ -57,7 +57,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
 
         private Optional<Float> visibleBoundsWidth = Optional.empty();
         private Optional<Float> visibleBoundsHeight = Optional.empty();
-        private Optional<Vector3f> visibleBoundsOffset = Optional.empty();
+        private Optional<Vector3fc> visibleBoundsOffset = Optional.empty();
         private Optional<Integer> textureWidth = Optional.empty();
         private Optional<Integer> textureHeight = Optional.empty();
 
@@ -117,29 +117,29 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         );
     }
 
-    public record GeometryInfo(String identifier, Optional<Float> visibleBoundsWidth, Optional<Float> visibleBoundsHeight, Optional<Vector3f> visibleBoundsOffset,
+    public record GeometryInfo(String identifier, Optional<Float> visibleBoundsWidth, Optional<Float> visibleBoundsHeight, Optional<Vector3fc> visibleBoundsOffset,
                                Optional<Integer> textureWidth, Optional<Integer> textureHeight) {
         public static final Codec<GeometryInfo> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         Codec.STRING.fieldOf("identifier").forGetter(GeometryInfo::identifier),
                         Codec.FLOAT.optionalFieldOf("visible_bounds_width").forGetter(GeometryInfo::visibleBoundsWidth),
                         Codec.FLOAT.optionalFieldOf("visible_bounds_height").forGetter(GeometryInfo::visibleBoundsHeight),
-                        ExtraCodecs.VECTOR3F.optionalFieldOf("visible_bounds_offset").forGetter(GeometryInfo::visibleBoundsOffset),
+                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("visible_bounds_offset").forGetter(GeometryInfo::visibleBoundsOffset),
                         Codec.INT.optionalFieldOf("texture_width").forGetter(GeometryInfo::textureWidth),
                         Codec.INT.optionalFieldOf("texture_height").forGetter(GeometryInfo::textureHeight)
                 ).apply(instance, GeometryInfo::new)
         );
     }
 
-    public record Bone(String name, Optional<String> parent, Optional<String> binding, Vector3f pivot, Vector3f rotation,
+    public record Bone(String name, Optional<String> parent, Optional<String> binding, Vector3fc pivot, Vector3fc rotation,
                        boolean mirror, float inflate, List<Cube> cubes) {
         public static final Codec<Bone> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         Codec.STRING.fieldOf("name").forGetter(Bone::name),
                         Codec.STRING.optionalFieldOf("parent").forGetter(Bone::parent),
                         Codec.STRING.optionalFieldOf("binding").forGetter(Bone::binding),
-                        ExtraCodecs.VECTOR3F.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Bone::pivot),
-                        ExtraCodecs.VECTOR3F.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Bone::rotation),
+                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Bone::pivot),
+                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Bone::rotation),
                         Codec.BOOL.optionalFieldOf("mirror", false).forGetter(Bone::mirror),
                         Codec.FLOAT.optionalFieldOf("inflate", 0.0F).forGetter(Bone::inflate),
                         Cube.CODEC.listOf().optionalFieldOf("cubes", List.of()).forGetter(Bone::cubes)
@@ -152,8 +152,8 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
 
             private Optional<String> parent = Optional.empty();
             private Optional<String> binding = Optional.empty();
-            private Vector3f pivot = VECTOR3F_ZERO;
-            private Vector3f rotation = VECTOR3F_ZERO;
+            private Vector3fc pivot = VECTOR3F_ZERO;
+            private Vector3fc rotation = VECTOR3F_ZERO;
             private boolean mirror = false;
             private float inflate = 0.0F;
 
@@ -171,12 +171,12 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                 return this;
             }
 
-            public Builder withPivot(Vector3f pivot) {
+            public Builder withPivot(Vector3fc pivot) {
                 this.pivot = pivot;
                 return this;
             }
 
-            public Builder withRotation(Vector3f rotation) {
+            public Builder withRotation(Vector3fc rotation) {
                 this.rotation = rotation;
                 return this;
             }
@@ -206,15 +206,15 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         }
     }
 
-    public record Cube(Vector3f origin, Vector3f size, Vector3f rotation, Vector3f pivot, float inflate, boolean mirror,
+    public record Cube(Vector3fc origin, Vector3fc size, Vector3fc rotation, Vector3fc pivot, float inflate, boolean mirror,
                        Map<Direction, Face> faces) {
         private static final Codec<Map<Direction, Face>> FACE_MAP_CODEC = Codec.unboundedMap(Direction.CODEC, Face.CODEC);
         public static final Codec<Cube> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
-                        ExtraCodecs.VECTOR3F.fieldOf("origin").forGetter(Cube::origin),
-                        ExtraCodecs.VECTOR3F.fieldOf("size").forGetter(Cube::size),
-                        ExtraCodecs.VECTOR3F.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Cube::rotation),
-                        ExtraCodecs.VECTOR3F.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Cube::pivot),
+                        CodecUtil.VECTOR3F_CODEC.fieldOf("origin").forGetter(Cube::origin),
+                        CodecUtil.VECTOR3F_CODEC.fieldOf("size").forGetter(Cube::size),
+                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Cube::rotation),
+                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Cube::pivot),
                         Codec.FLOAT.optionalFieldOf("inflate", 0.0F).forGetter(Cube::inflate),
                         Codec.BOOL.optionalFieldOf("mirror", false).forGetter(Cube::mirror),
                         FACE_MAP_CODEC.optionalFieldOf("uv", Map.of()).forGetter(Cube::faces)
@@ -222,26 +222,26 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         );
 
         public static class Builder {
-            private final Vector3f origin;
-            private final Vector3f size;
+            private final Vector3fc origin;
+            private final Vector3fc size;
             private final Map<Direction, Face> faces = new HashMap<>();
 
-            private Vector3f rotation = VECTOR3F_ZERO;
-            private Vector3f pivot = VECTOR3F_ZERO;
+            private Vector3fc rotation = VECTOR3F_ZERO;
+            private Vector3fc pivot = VECTOR3F_ZERO;
             private float inflate = 0.0F;
             private boolean mirror = false;
 
-            public Builder(Vector3f origin, Vector3f size) {
+            public Builder(Vector3fc origin, Vector3fc size) {
                 this.origin = origin;
                 this.size = size;
             }
 
-            public Builder withRotation(Vector3f rotation) {
+            public Builder withRotation(Vector3fc rotation) {
                 this.rotation = rotation;
                 return this;
             }
 
-            public Builder withPivot(Vector3f pivot) {
+            public Builder withPivot(Vector3fc pivot) {
                 this.pivot = pivot;
                 return this;
             }
@@ -256,7 +256,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                 return this;
             }
 
-            public Builder withFace(Direction direction, Vector2f uvOrigin, Vector2f uvSize, Quadrant uvRotation) {
+            public Builder withFace(Direction direction, Vector2fc uvOrigin, Vector2fc uvSize, Quadrant uvRotation) {
                 if (faces.containsKey(direction)) {
                     throw new IllegalArgumentException("Already added a face for direction " + direction);
                 }
@@ -264,7 +264,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                 return this;
             }
 
-            public Builder withFace(Direction direction, Vector2f uvOrigin, Vector2f uvSize) {
+            public Builder withFace(Direction direction, Vector2fc uvOrigin, Vector2fc uvSize) {
                 return withFace(direction, uvOrigin, uvSize, Quadrant.R0);
             }
 
@@ -274,11 +274,11 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
         }
     }
 
-    public record Face(Vector2f uvOrigin, Vector2f uvSize, Quadrant uvRotation) {
+    public record Face(Vector2fc uvOrigin, Vector2fc uvSize, Quadrant uvRotation) {
         public static final Codec<Face> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
-                        ExtraCodecs.VECTOR2F.fieldOf("uv").forGetter(Face::uvOrigin),
-                        ExtraCodecs.VECTOR2F.fieldOf("uv_size").forGetter(Face::uvSize),
+                        CodecUtil.VECTOR2F_CODEC.fieldOf("uv").forGetter(Face::uvOrigin),
+                        CodecUtil.VECTOR2F_CODEC.fieldOf("uv_size").forGetter(Face::uvSize),
                         Quadrant.CODEC.optionalFieldOf("uv_rotation", Quadrant.R0).forGetter(Face::uvRotation)
                 ).apply(instance, Face::new)
         );

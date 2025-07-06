@@ -4,10 +4,9 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.util.ExtraCodecs;
 import org.geysermc.packgenerator.CodecUtil;
 import org.geysermc.packgenerator.pack.BedrockVersion;
-import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -113,7 +112,7 @@ public record BedrockAnimation(BedrockVersion formatVersion, Map<String, Animati
                 return this;
             }
 
-            public Builder withBone(String bone, Vector3f position, Vector3f rotation, Vector3f scale) {
+            public Builder withBone(String bone, Vector3fc position, Vector3fc rotation, Vector3fc scale) {
                 return withBone(bone, new SimpleAnimation(position, rotation, scale));
             }
 
@@ -138,12 +137,12 @@ public record BedrockAnimation(BedrockVersion formatVersion, Map<String, Animati
                         }), mode -> mode == HOLD_ON_LAST_FRAME ? Either.right("hold_on_last_frame") : Either.left(mode == LOOP));
     }
 
-    public record SimpleAnimation(Vector3f position, Vector3f rotation, Vector3f scale) {
+    public record SimpleAnimation(Vector3fc position, Vector3fc rotation, Vector3fc scale) {
         public static final Codec<SimpleAnimation> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
-                        ExtraCodecs.VECTOR3F.fieldOf("position").forGetter(SimpleAnimation::position),
-                        ExtraCodecs.VECTOR3F.fieldOf("rotation").forGetter(SimpleAnimation::rotation),
-                        ExtraCodecs.VECTOR3F.fieldOf("scale").forGetter(SimpleAnimation::scale)
+                        CodecUtil.VECTOR3F_CODEC.fieldOf("position").forGetter(SimpleAnimation::position),
+                        CodecUtil.VECTOR3F_CODEC.fieldOf("rotation").forGetter(SimpleAnimation::rotation),
+                        CodecUtil.VECTOR3F_CODEC.fieldOf("scale").forGetter(SimpleAnimation::scale)
                 ).apply(instance, SimpleAnimation::new)
         );
     }
