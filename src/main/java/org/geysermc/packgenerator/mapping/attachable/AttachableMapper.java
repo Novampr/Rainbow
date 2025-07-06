@@ -9,7 +9,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
-import org.geysermc.packgenerator.mapping.animation.BedrockAnimationContext;
 import org.geysermc.packgenerator.mapping.geometry.BedrockGeometryContext;
 import org.geysermc.packgenerator.mixin.EntityRenderDispatcherAccessor;
 import org.geysermc.packgenerator.pack.attachable.BedrockAttachable;
@@ -21,11 +20,11 @@ import java.util.function.Consumer;
 public class AttachableMapper {
 
     public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, Optional<BedrockGeometryContext> customGeometry,
-                                                      Optional<BedrockAnimationContext> animations, Consumer<ResourceLocation> textureConsumer) {
+                                                      Consumer<ResourceLocation> textureConsumer) {
         // Crazy optional statement
         // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
         return customGeometry
-                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.geometry(), geometry.texture().getPath()))
+                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.geometry().definitions().getFirst(), geometry.texture().getPath()))
                 .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
                         .flatMap(optional -> (Optional<Equippable>) optional)
                         .flatMap(equippable -> {
@@ -42,7 +41,7 @@ public class AttachableMapper {
                             return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), texture.getPath());
                         }))
                 .map(attachable -> {
-                    animations.ifPresent(context -> {
+                    customGeometry.map(BedrockGeometryContext::animation).ifPresent(context -> {
                         attachable.withAnimation("first_person", context.firstPerson());
                         attachable.withAnimation("third_person", context.thirdPerson());
                         attachable.withScript("animate", "first_person", "context.is_first_person == 1.0");

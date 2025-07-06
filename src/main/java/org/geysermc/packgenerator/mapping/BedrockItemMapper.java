@@ -94,13 +94,13 @@ public class BedrockItemMapper {
 
                             ResourceLocation texture = itemModelLocation;
                             Material layer0Texture = itemModel.getTopTextureSlots().getMaterial("layer0");
-                            Optional<SimpleUnbakedGeometry> customGeometry = Optional.empty();
+                            Optional<ResolvedModel> customGeometry = Optional.empty();
                             if (layer0Texture != null) {
                                 texture = layer0Texture.texture();
                             } else {
                                 // Unknown texture (doesn't use layer0), so we immediately assume the geometry is custom
                                 // This check should probably be done differently
-                                customGeometry = Optional.of((SimpleUnbakedGeometry) itemModel.getTopGeometry());
+                                customGeometry = Optional.of(itemModel);
                             }
                             context.create(bedrockIdentifier, texture, handheld, customGeometry);
                         }, () -> context.reporter.report(() -> "missing block model " + itemModelLocation));
@@ -169,7 +169,7 @@ public class BedrockItemMapper {
         }
 
         public void create(ResourceLocation bedrockIdentifier, ResourceLocation texture, boolean displayHandheld,
-                           Optional<SimpleUnbakedGeometry> customGeometry) {
+                           Optional<ResolvedModel> customModel) {
             GeyserSingleDefinition definition = new GeyserSingleDefinition(Optional.of(model), bedrockIdentifier, Optional.of(displayName), predicateStack,
                     new GeyserSingleDefinition.BedrockOptions(Optional.empty(), true, displayHandheld, protectionValue), componentPatch);
             try {
@@ -180,14 +180,10 @@ public class BedrockItemMapper {
             }
 
             // TODO Should probably get a better way to get geometry texture
-            Optional<BedrockGeometry> bedrockGeometry = customGeometry.map(geometry -> GeometryMapper.mapGeometry(definition.textureName(), geometry));
-            Optional<BedrockGeometryContext> geometryContext = bedrockGeometry.map(geometry -> new BedrockGeometryContext(geometry.definitions().getFirst(), texture));
-            Optional<BedrockAnimationContext> animationContext = geometryContext.map(
-                    geometry -> AnimationMapper.mapAnimation(definition.textureName(), geometry.geometry().bones().getFirst().name(), null));
-
+            Optional<BedrockGeometryContext> bedrockGeometry = customModel.map(model -> GeometryMapper.mapGeometry(definition.textureName(), model, texture));
             itemConsumer.accept(new BedrockItem(bedrockIdentifier, definition.textureName(), texture,
-                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, geometryContext, animationContext, additionalTextureConsumer),
-                    bedrockGeometry, animationContext.map(BedrockAnimationContext::animation)));
+                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, bedrockGeometry, additionalTextureConsumer), bedrockGeometry.map(BedrockGeometryContext::geometry),
+                    bedrockGeometry.map(BedrockGeometryContext::animation).map(BedrockAnimationContext::animation)));
         }
     }
 }
