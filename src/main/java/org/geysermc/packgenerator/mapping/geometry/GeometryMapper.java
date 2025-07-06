@@ -7,7 +7,6 @@ import net.minecraft.client.renderer.block.model.SimpleUnbakedGeometry;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import org.geysermc.packgenerator.mapping.animation.AnimationMapper;
 import org.geysermc.packgenerator.pack.geometry.BedrockGeometry;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -18,7 +17,7 @@ import java.util.Map;
 public class GeometryMapper {
     private static final Vector3fc CENTRE_OFFSET = new Vector3f(8.0F, 0.0F, 8.0F);
 
-    public static BedrockGeometryContext mapGeometry(String identifier, ResolvedModel model, ResourceLocation texture) {
+    public static BedrockGeometryContext mapGeometry(String identifier, String boneName, ResolvedModel model, ResourceLocation texture) {
         BedrockGeometry.Builder builder = BedrockGeometry.builder(identifier);
         // Blockbench seems to always use these values
         builder.withVisibleBoundsWidth(2.0F);
@@ -29,7 +28,7 @@ public class GeometryMapper {
         builder.withTextureWidth(16);
         builder.withTextureHeight(16);
 
-        BedrockGeometry.Bone.Builder bone = BedrockGeometry.bone(identifier);
+        BedrockGeometry.Bone.Builder bone = BedrockGeometry.bone(boneName);
 
         Vector3f min = new Vector3f(Float.MAX_VALUE);
         Vector3f max = new Vector3f(Float.MIN_VALUE);
@@ -48,7 +47,7 @@ public class GeometryMapper {
 
         // Bind to the bone of the current item slot
         bone.withBinding("q.item_slot_to_bone_name(context.item_slot)");
-        return new BedrockGeometryContext(builder.withBone(bone).build(), AnimationMapper.mapAnimation(identifier, identifier, model.getTopTransforms()), texture);
+        return new BedrockGeometryContext(builder.withBone(bone).build(), texture);
     }
 
     private static BedrockGeometry.Cube.Builder mapBlockElement(BlockElement element) {

@@ -180,10 +180,14 @@ public class BedrockItemMapper {
             }
 
             // TODO Should probably get a better way to get geometry texture
-            Optional<BedrockGeometryContext> bedrockGeometry = customModel.map(model -> GeometryMapper.mapGeometry(definition.textureName(), model, texture));
+            String safeIdentifier = definition.textureName();
+            String bone = "bone";
+            Optional<BedrockGeometryContext> bedrockGeometry = customModel.map(model -> GeometryMapper.mapGeometry(safeIdentifier, bone, model, texture));
+            Optional<BedrockAnimationContext> bedrockAnimation = customModel.map(model -> AnimationMapper.mapAnimation(safeIdentifier, bone, model.getTopTransforms()));
+
             itemConsumer.accept(new BedrockItem(bedrockIdentifier, definition.textureName(), texture,
-                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, bedrockGeometry, additionalTextureConsumer), bedrockGeometry.map(BedrockGeometryContext::geometry),
-                    bedrockGeometry.map(BedrockGeometryContext::animation).map(BedrockAnimationContext::animation)));
+                    AttachableMapper.mapItem(componentPatch, bedrockIdentifier, bedrockGeometry, bedrockAnimation, additionalTextureConsumer),
+                    bedrockGeometry.map(BedrockGeometryContext::geometry), bedrockAnimation.map(BedrockAnimationContext::animation)));
         }
     }
 }
