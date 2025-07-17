@@ -1,29 +1,29 @@
 {
   "schemaVersion": 1,
-  "id": "geyser-mappings-generator",
+  "id": "rainbow",
   "version": "${version}",
-  "name": "Geyser Mappings Generator",
-  "description": "A mod to generate Geyser mappings (and potentially in the future, full bedrock packs) for use with Geyser's custom item API (v2).",
+  "name": "Rainbow",
+  "description": "Rainbow is a mod to generate Geyser mappings and bedrock resourcepacks for use with Geyser's custom item API (v2)",
   "authors": [
     "GeyserMC contributors"
   ],
   "contact": {
-    "repo": "https://github.com/GeyserMC/geyser-mappings-generator"
+    "repo": "https://github.com/GeyserMC/rainbow"
   },
   "license": "MIT",
-  "icon": "assets/geyser-mappings-generator/icon.png",
+  "icon": "assets/rainbow/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "org.geysermc.packgenerator.GeyserMappingsGenerator"
+      "org.geysermc.rainbow.Rainbow"
     ]
   },
   "mixins": [
-    "geyser-mappings-generator.mixins.json"
+    "rainbow.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
-    "fabric": "*",
+    "fabric-api": "*",
     "minecraft": "${minecraft_version}"
   }
 }

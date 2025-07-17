@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.geysermc.rainbow.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "BlockModelWrapperMixin",
+    "BlockModelWrapperMixin$UnbakedMixin",
+    "ConditionalItemModelAccessor",
+    "EntityRenderDispatcherAccessor",
+    "GuiItemRenderStateMixin",
+    "ModelManagerMixin",
+    "PictureInPictureRendererAccessor",
+    "PictureInPictureRendererMixin",
+    "SelectItemModelAccessor",
+    "SelectItemModelMixin",
+    "SelectItemModelMixin$UnbakedSwitchMixin",
+    "SplashRendererAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
