@@ -3,12 +3,14 @@
   "id": "rainbow",
   "version": "${version}",
   "name": "Rainbow",
-  "description": "Rainbow is a mod to generate Geyser mappings and bedrock resourcepacks for use with Geyser's custom item API (v2)",
+  "description": "Rainbow is a mod to generate Geyser item mappings and bedrock resourcepacks for use with Geyser's custom item API (v2)",
   "authors": [
     "GeyserMC contributors"
   ],
   "contact": {
-    "repo": "https://github.com/GeyserMC/rainbow"
+    "homepage": "https://github.com/GeyserMC/rainbow",
+    "issues": "https://github.com/GeyserMC/rainbow/issues",
+    "sources": "https://github.com/GeyserMC/rainbow"
   },
   "license": "MIT",
   "icon": "assets/rainbow/icon.png",
@@ -25,5 +27,12 @@
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
     "minecraft": "${minecraft_version}"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.gg/GeyserMC"
+      }
+    }
   }
 }
