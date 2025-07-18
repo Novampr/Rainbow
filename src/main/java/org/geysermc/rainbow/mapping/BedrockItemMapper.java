@@ -79,9 +79,9 @@ public class BedrockItemMapper {
     private static void mapItem(ItemModel model, MappingContext context) {
         switch (model) {
             case BlockModelWrapper modelWrapper -> {
-                ResourceLocation itemModelLocation = ((BlockModelWrapperLocationAccessor) modelWrapper).geyser_mappings_generator$getModelOrigin();
+                ResourceLocation itemModelLocation = ((BlockModelWrapperLocationAccessor) modelWrapper).rainbow$getModelOrigin();
 
-                ((ResolvedModelAccessor) Minecraft.getInstance().getModelManager()).geyser_mappings_generator$getResolvedModel(itemModelLocation)
+                ((ResolvedModelAccessor) Minecraft.getInstance().getModelManager()).rainbow$getResolvedModel(itemModelLocation)
                         .ifPresentOrElse(itemModel -> {
                             ResolvedModel parentModel = itemModel.parent();
                             boolean handheld = false;
@@ -153,7 +153,7 @@ public class BedrockItemMapper {
         }
 
         //noinspection unchecked
-        Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).geyser_mappings_generator$getCases();
+        Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).rainbow$getCases();
 
         cases.forEach((key, value) -> mapItem(value, context.with(new GeyserMatchPredicate(dataConstructor.apply(key)), "select case " + key + " ")));
         mapItem(cases.defaultReturnValue(), context.child("default case "));

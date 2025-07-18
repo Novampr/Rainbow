@@ -36,7 +36,7 @@ public abstract class ModelManagerMixin implements PreparableReloadListener, Aut
     }
 
     @Override
-    public Optional<ResolvedModel> geyser_mappings_generator$getResolvedModel(ResourceLocation location) {
+    public Optional<ResolvedModel> rainbow$getResolvedModel(ResourceLocation location) {
         return unbakedResolvedModels == null ? Optional.empty() : Optional.ofNullable(unbakedResolvedModels.get(location));
     }
 }

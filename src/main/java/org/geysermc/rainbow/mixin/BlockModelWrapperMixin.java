@@ -19,12 +19,12 @@ public abstract class BlockModelWrapperMixin implements ItemModel, BlockModelWra
     private ResourceLocation modelOrigin;
 
     @Override
-    public ResourceLocation geyser_mappings_generator$getModelOrigin() {
+    public ResourceLocation rainbow$getModelOrigin() {
         return modelOrigin;
     }
 
     @Override
-    public void geyser_mappings_generator$setModelOrigin(ResourceLocation model) {
+    public void rainbow$setModelOrigin(ResourceLocation model) {
         modelOrigin = model;
     }
 
@@ -37,7 +37,7 @@ public abstract class BlockModelWrapperMixin implements ItemModel, BlockModelWra
 
         @Inject(method = "bake", at = @At("TAIL"))
         public void setModelOrigin(BakingContext context, CallbackInfoReturnable<ItemModel> callbackInfoReturnable) {
-            ((BlockModelWrapperLocationAccessor) callbackInfoReturnable.getReturnValue()).geyser_mappings_generator$setModelOrigin(model);
+            ((BlockModelWrapperLocationAccessor) callbackInfoReturnable.getReturnValue()).rainbow$setModelOrigin(model);
         }
     }
 }

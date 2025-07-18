@@ -19,12 +19,12 @@ public abstract class SelectItemModelMixin<T> implements ItemModel, SelectItemMo
     private Object2ObjectMap<T, ItemModel> cases;
 
     @Override
-    public Object2ObjectMap<T, ItemModel> geyser_mappings_generator$getCases() {
+    public Object2ObjectMap<T, ItemModel> rainbow$getCases() {
         return cases;
     }
 
     @Override
-    public void geyser_mappings_generator$setCases(Object2ObjectMap<T, ItemModel> cases) {
+    public void rainbow$setCases(Object2ObjectMap<T, ItemModel> cases) {
         this.cases = cases;
     }
 
@@ -35,7 +35,7 @@ public abstract class SelectItemModelMixin<T> implements ItemModel, SelectItemMo
         public void setCases(BakingContext bakingContext, ItemModel model, CallbackInfoReturnable<ItemModel> callbackInfoReturnable,
                              @Local Object2ObjectMap<T, ItemModel> cases) {
             //noinspection unchecked
-            ((SelectItemModelCasesAccessor<T>) callbackInfoReturnable.getReturnValue()).geyser_mappings_generator$setCases(cases);
+            ((SelectItemModelCasesAccessor<T>) callbackInfoReturnable.getReturnValue()).rainbow$setCases(cases);
         }
     }
 }

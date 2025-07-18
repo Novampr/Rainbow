@@ -8,5 +8,5 @@ import java.util.Optional;
 // Implemented on ModelManager, since this class doesn't keep the resolved models after baking, we have to store it manually
 public interface ResolvedModelAccessor {
 
-    Optional<ResolvedModel> geyser_mappings_generator$getResolvedModel(ResourceLocation location);
+    Optional<ResolvedModel> rainbow$getResolvedModel(ResourceLocation location);
 }

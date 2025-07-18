@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.item.ItemModel;
 // Implemented on BlockModelWrapper, since this class doesn't store the cases it has in a nice format after baking, we have to store it manually
 public interface SelectItemModelCasesAccessor<T> {
 
-    Object2ObjectMap<T, ItemModel> geyser_mappings_generator$getCases();
+    Object2ObjectMap<T, ItemModel> rainbow$getCases();
 
-    void geyser_mappings_generator$setCases(Object2ObjectMap<T, ItemModel> cases);
+    void rainbow$setCases(Object2ObjectMap<T, ItemModel> cases);
 }
