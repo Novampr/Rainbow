@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Get Release Info
         id: release-info
-        uses: GeyserMC/actions/previous-release@feature/globs
+        uses: GeyserMC/actions/previous-release@master
         with:
           data: ${{ vars.RELEASEACTION_PREVRELEASE }}
 
@@ -34,11 +34,11 @@ jobs:
           BUILD_NUMBER: ${{ steps.release-info.outputs.curentRelease }}
 
       - name: Archive Artifacts
-        uses: GeyserMC/actions/upload-multi-artifact@feature/globs
+        uses: GeyserMC/actions/upload-multi-artifact@master
         if: success()
         with:
           artifacts: |
-            rainbow:build/libs/rainbow-*.jar
+            rainbow:build/libs/rainbow.jar
 
       - name: Get Version
         if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
@@ -49,28 +49,28 @@ jobs:
 
       - name: Get Release Metadata
         if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
-        uses: GeyserMC/actions/release@feature/globs
+        uses: GeyserMC/actions/release@master
         id: metadata
         with:
           appID: ${{ secrets.RELEASE_APP_ID }}
           appPrivateKey: ${{ secrets.RELEASE_APP_PK }}
           files: |
-            rainbow:build/libs/rainbow-*.jar
-          releaseEnabled: true
+            rainbow:build/libs/rainbow.jar
+          releaseEnabled: false
           saveMetadata: true
           releaseProject: 'rainbow'
           releaseVersion: ${{ steps.get-version.outputs.VERSION }}
 
-#      - name: Publish to Downloads API
-#        if: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
-#        uses: GeyserMC/actions/upload-release@feature/globs
-#        with:
-#          username: ${{ vars.DOWNLOADS_USERNAME }}
-#          privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
-#          host: ${{ secrets.DOWNLOADS_SERVER_IP }}
-#          files: |
-#            build/libs/rainbow-*.jar - TODO does not support globs!
-#          changelog: ${{ steps.metadata.outputs.body }}
+      - name: Publish to Downloads API
+        if: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
+        uses: GeyserMC/actions/upload-release@master
+        with:
+          username: ${{ vars.DOWNLOADS_USERNAME }}
+          privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
+          host: ${{ secrets.DOWNLOADS_SERVER_IP }}
+          files: |
+            build/libs/rainbow.jar
+          changelog: ${{ steps.metadata.outputs.body }}
 
 #      - name: Publish to Modrinth
 #        if: ${{ success() && github.repository == 'GeyserMC/rainbow' && github.ref_name == 'master' }}
@@ -87,4 +87,4 @@ jobs:
           discordWebhook: ${{ secrets.DISCORD_WEBHOOK }}
           status: ${{ job.status }}
           body: ${{ steps.metadata.outputs.body }}
-          includeDownloads: false
+          includeDownloads: true
