@@ -68,12 +68,15 @@ public class BedrockPack {
     public BedrockPack(String name) throws IOException {
         this.name = name;
 
+        // Not reading existing item mappings/texture atlas for now since that doesn't work all that well yet
         exportPath = createPackDirectory(name);
         packPath = exportPath.resolve(PACK_DIRECTORY);
-        mappings = CodecUtil.readOrCompute(GeyserMappings.CODEC, exportPath.resolve(MAPPINGS_FILE), GeyserMappings::new);
+        //mappings = CodecUtil.readOrCompute(GeyserMappings.CODEC, exportPath.resolve(MAPPINGS_FILE), GeyserMappings::new);
+        mappings = new GeyserMappings();
         manifest = CodecUtil.readOrCompute(PackManifest.CODEC, packPath.resolve(MANIFEST_FILE), () -> defaultManifest(name)).increment();
-        itemTextures = CodecUtil.readOrCompute(BedrockTextureAtlas.ITEM_ATLAS_CODEC, packPath.resolve(ITEM_ATLAS_FILE),
-                () -> BedrockTextureAtlas.itemAtlas(name, BedrockTextures.builder())).textures().toBuilder();
+        /*itemTextures = CodecUtil.readOrCompute(BedrockTextureAtlas.ITEM_ATLAS_CODEC, packPath.resolve(ITEM_ATLAS_FILE),
+                () -> BedrockTextureAtlas.itemAtlas(name, BedrockTextures.builder())).textures().toBuilder();*/
+        itemTextures = BedrockTextures.builder();
 
         reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name + " ");
     }
