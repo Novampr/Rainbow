@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import org.apache.commons.io.IOUtils;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
+import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
 import org.geysermc.rainbow.mapping.geyser.GeyserMappings;
 import org.geysermc.rainbow.mixin.SplashRendererAccessor;
@@ -38,7 +39,7 @@ public class BedrockPack {
             "meow", "we'll be done here soon™", "got anything else to say?", "we're done now!", "this will be fixed by v6053", "expect it to be done within 180 business days!");
     private static final RandomSource RANDOM = RandomSource.create();
 
-    private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve("rainbow");
+    private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve(Rainbow.MOD_ID);
     private static final Path PACK_DIRECTORY = Path.of("pack");
     private static final Path ATTACHABLES_DIRECTORY = Path.of("attachables");
     private static final Path GEOMETRY_DIRECTORY = Path.of("models/entity");
@@ -48,6 +49,7 @@ public class BedrockPack {
     private static final Path MANIFEST_FILE = Path.of("manifest.json");
     private static final Path ITEM_ATLAS_FILE = Path.of("textures/item_texture.json");
 
+    private static final Path PACK_ZIP_FILE = Path.of("pack.zip");
     private static final Path REPORT_FILE = Path.of("report.txt");
 
     private final String name;
@@ -153,6 +155,12 @@ public class BedrockPack {
                 reporter.forChild(() -> "texture " + finalTexture + " ").report(() -> "failed to save to pack: " + exception);
                 success = false;
             }
+        }
+
+        try {
+            CodecUtil.tryZipDirectory(packPath, exportPath.resolve(PACK_ZIP_FILE));
+        } catch (IOException exception) {
+            success = false;
         }
 
         try {

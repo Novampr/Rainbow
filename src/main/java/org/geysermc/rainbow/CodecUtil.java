@@ -14,9 +14,14 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class CodecUtil {
     // It's fine to cast to mutable here since codecs won't change the data
@@ -60,6 +65,28 @@ public class CodecUtil {
             Files.writeString(path, GSON.toJson(json));
         } catch (IOException exception) {
             Rainbow.LOGGER.warn("Failed to write file {}!", path, exception);
+            throw exception;
+        }
+    }
+
+    public static void tryZipDirectory(Path directory, Path output) throws IOException {
+        try (FileSystem zip = FileSystems.newFileSystem(output, Map.of("create", "true"))) {
+            try (Stream<Path> paths = Files.walk(directory)) {
+                paths.forEach(path -> {
+                    try {
+                        Path inZip = zip.getPath(String.valueOf(directory.relativize(path)));
+                        if (Files.isDirectory(path)) {
+                            Files.createDirectories(inZip);
+                        } else {
+                            Files.copy(path, inZip, StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    } catch (IOException exception) {
+                        Rainbow.LOGGER.warn("Failed to copy contents from {} to ZIP-file {}!", path, output, exception);
+                    }
+                });
+            }
+        } catch (IOException exception) {
+            Rainbow.LOGGER.warn("Failed to write ZIP-file {}!", output, exception);
             throw exception;
         }
     }
