@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.item.properties.conditional.HasComponent;
 import net.minecraft.client.renderer.item.properties.conditional.ItemModelPropertyTest;
 import net.minecraft.client.renderer.item.properties.select.Charge;
 import net.minecraft.client.renderer.item.properties.select.ContextDimension;
+import net.minecraft.client.renderer.item.properties.select.DisplayContext;
 import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
 import net.minecraft.client.resources.model.Material;
@@ -23,9 +24,13 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
 import org.geysermc.rainbow.accessor.BlockModelWrapperLocationAccessor;
@@ -62,7 +67,15 @@ public class BedrockItemMapper {
     public static void tryMapStack(ItemStack stack, ResourceLocation model, ProblemReporter reporter,
                                    GeyserMappings mappings, Path packPath, BedrockItemConsumer itemConsumer, Consumer<ResourceLocation> additionalTextureConsumer) {
         String displayName = stack.getHoverName().getString();
-        int protectionValue = 0; // TODO check the attributes
+        int protectionValue = 0;
+
+        ItemAttributeModifiers modifiers = stack.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        if (modifiers != null) {
+            protectionValue = modifiers.modifiers().stream()
+                    .filter(modifier -> modifier.attribute() == Attributes.ARMOR && modifier.modifier().operation() == AttributeModifier.Operation.ADD_VALUE)
+                    .mapToInt(entry -> (int) entry.modifier().amount())
+                    .sum();
+        }
 
         mapItem(model, displayName, protectionValue, stack.getComponentsPatch(), reporter,
                 mapping -> mappings.map(stack.getItemHolder(), mapping), packPath, itemConsumer, additionalTextureConsumer);
@@ -105,12 +118,15 @@ public class BedrockItemMapper {
                                 // This check should probably be done differently
                                 customGeometry = Optional.of(itemModel);
                             }
+
+                            // Not a problem, but just report to get the model printed in the report file
+                            context.reporter.report(() -> "creating mapping for block model " + itemModelLocation);
                             context.create(bedrockIdentifier, texture, handheld, customGeometry);
                         }, () -> context.reporter.report(() -> "missing block model " + itemModelLocation));
             }
-            case ConditionalItemModel conditional -> mapConditionalModel(conditional, context.child("condition " + conditional + " "));
-            case SelectItemModel<?> select -> mapSelectModel(select, context.child("select " + select + " "));
-            default -> context.reporter.report(() -> "unable to map item model " + model.getClass());
+            case ConditionalItemModel conditional -> mapConditionalModel(conditional, context.child("condition model "));
+            case SelectItemModel<?> select -> mapSelectModel(select, context.child("select model "));
+            default -> context.reporter.report(() -> "unsupported item model " + model.getClass()); // TODO intermediary stuff
         }
     }
 
@@ -124,13 +140,14 @@ public class BedrockItemMapper {
             case FishingRodCast ignored -> GeyserConditionPredicate.FISHING_ROD_CAST;
             default -> null;
         };
-        if (predicateProperty == null) {
-            context.reporter.report(() -> "unsupported conditional model property " + property);
-            return;
-        }
-
         ItemModel onTrue = ((ConditionalItemModelAccessor) model).getOnTrue();
         ItemModel onFalse = ((ConditionalItemModelAccessor) model).getOnFalse();
+
+        if (predicateProperty == null) {
+            context.reporter.report(() -> "unsupported conditional model property " + property + ", only mapping on_false");
+            mapItem(onFalse, context.child("condition on_false (unsupported property)"));
+            return;
+        }
 
         mapItem(onTrue, context.with(new GeyserConditionPredicate(predicateProperty, true), "condition on true "));
         mapItem(onFalse, context.with(new GeyserConditionPredicate(predicateProperty, false), "condition on false "));
@@ -147,16 +164,24 @@ public class BedrockItemMapper {
             case net.minecraft.client.renderer.item.properties.select.CustomModelDataProperty customModelData -> string -> new GeyserMatchPredicate.CustomModelData((String) string, customModelData.index());
             default -> null;
         };
-        if (dataConstructor == null) {
-            context.reporter.report(() -> "unsupported select model property " + property);
-            return;
-        }
 
         //noinspection unchecked
         Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).rainbow$getCases();
 
+        if (dataConstructor == null) {
+            if (property instanceof DisplayContext) {
+                ItemModel gui = cases.get(ItemDisplayContext.GUI);
+                if (gui != null) {
+                    context.reporter.report(() -> "unsupported select model property display_context, only mapping \"gui\" case");
+                }
+            }
+            context.reporter.report(() -> "unsupported select model property " + property + ", only mapping fallback");
+            mapItem(cases.defaultReturnValue(), context.child("select fallback case (unsupported property) "));
+            return;
+        }
+
         cases.forEach((key, value) -> mapItem(value, context.with(new GeyserMatchPredicate(dataConstructor.apply(key)), "select case " + key + " ")));
-        mapItem(cases.defaultReturnValue(), context.child("default case "));
+        mapItem(cases.defaultReturnValue(), context.child("select fallback case "));
     }
 
     private record MappingContext(List<GeyserPredicate> predicateStack, ResourceLocation model, String displayName, int protectionValue, DataComponentPatch componentPatch, ProblemReporter reporter,

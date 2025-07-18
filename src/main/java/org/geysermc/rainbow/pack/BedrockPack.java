@@ -181,7 +181,7 @@ public class BedrockPack {
     private String createPackSummary() {
         String problems = reporter.getTreeReport();
         if (StringUtil.isBlank(problems)) {
-            problems = "No problems were reported. Yay!";
+            problems = "Well that's odd... there's nothing here!";
         }
 
         long attachables = bedrockItems.stream().filter(item -> item.attachable().isPresent()).count();
@@ -200,7 +200,7 @@ Geometry files tried to export: %d
 Animations tried to export: %d
 Textures tried to export: %d
 
--- PROBLEM REPORT --
+-- MAPPING TREE REPORT --
 %s
 """.formatted(randomSummaryComment(), name, mappings.size(), itemTextures.build().size(),
                 attachables, geometries, animations, texturesToExport.size(), problems);
