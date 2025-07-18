@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Get Release Info
         id: release-info
-        uses: GeyserMC/actions/previous-release@master
+        uses: GeyserMC/actions/previous-release@feature/globs
         with:
           data: ${{ vars.RELEASEACTION_PREVRELEASE }}
 
@@ -34,7 +34,7 @@ jobs:
           BUILD_NUMBER: ${{ steps.release-info.outputs.curentRelease }}
 
       - name: Archive Artifacts
-        uses: GeyserMC/actions/upload-multi-artifact@master
+        uses: GeyserMC/actions/upload-multi-artifact@feature/globs
         if: success()
         with:
           artifacts: |
@@ -49,7 +49,7 @@ jobs:
 
       - name: Get Release Metadata
         if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
-        uses: GeyserMC/actions/release@master
+        uses: GeyserMC/actions/release@feature/globs
         id: metadata
         with:
           appID: ${{ secrets.RELEASE_APP_ID }}
@@ -63,7 +63,7 @@ jobs:
 
       - name: Publish to Downloads API
         if: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
-        uses: GeyserMC/actions/upload-release@master
+        uses: GeyserMC/actions/upload-release@feature/globs
         with:
           username: ${{ vars.DOWNLOADS_USERNAME }}
           privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
@@ -80,11 +80,11 @@ jobs:
 #          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
 #        run: ./gradlew modrinth
 
-      - name: Notify Discord
-        if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
-        uses: GeyserMC/actions/notify-discord@master
-        with:
-          discordWebhook: ${{ secrets.DISCORD_WEBHOOK }}
-          status: ${{ job.status }}
-          body: ${{ steps.metadata.outputs.body }}
-          includeDownloads: ${{ github.ref_name == 'master' }}
+#      - name: Notify Discord
+#        if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
+#        uses: GeyserMC/actions/notify-discord@master
+#        with:
+#          discordWebhook: ${{ secrets.DISCORD_WEBHOOK }}
+#          status: ${{ job.status }}
+#          body: ${{ steps.metadata.outputs.body }}
+#          includeDownloads: ${{ github.ref_name == 'master' }}
