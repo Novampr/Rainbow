@@ -14,15 +14,25 @@ Rainbow is currently experimental and capable of the following:
   - Also includes detecting if an item should be displayed handheld by looking at the item's model.
 - Generating a simple bedrock resourcepack for simple 2D items, as well as:
   - Simple custom armour items, by analysing an item's `minecraft:equippable` component and loaded equipment assets.
-  - 3D Java items, by converting the model to a bedrock one, and generating an attachable and animations for it, as well as rendering a custom GUI icon (unlikely to work well as of now).
+  - 3D items (unlikely to work well as of now), by converting the Java model to a bedrock one, and generating an attachable and animations for it, as well as rendering a custom GUI icon.
 
 Rainbow works by detecting custom items in your inventory, or a container/inventory menu you have opened. It analyses
 the components of detected items, and uses assets from loaded Java resourcepacks to gather information about item models, textures,
 and more.
 
-Commands:
+## Usage
 
-- `/rainbow create <name>` - starts a new pack with the given name. The files will be exported in `.minecraft/geyser/<name>` when finished. Anything in this directory can be overwritten!
-- `/rainbow map` - creates Geyser mappings for the item stack you are currently holding. The stack must have a custom model, and a pack must have been created.
-- `/rainbow mapinventory` - creates Geyser mappings for every applicable item in your inventory. A pack must have been created.
-- `/rainbow finish` - finishes the pack, and writes Geyser mappings to disk.
+To use Rainbow's generated item mappings, you must use a build of Geyser with support for the v2 item mappings format.
+You can download those [here](https://github.com/geyserMC/geyser/pull/5189).
+
+To use Rainbow itself, you must install it on your Minecraft client. Rainbow adds a few commands to the client. Generally,
+you use them as follows:
+
+1. First, start a new pack by running `/rainbow create <name>`, replacing `<name>` with the name of your pack. Your resourcepack and item mappings will be exported in the `.minecraft/rainbow/<name>` folder. Anything in here can be overwritten!
+2. Once you have created a pack, you can start mapping custom items. Mapped custom items will be included in the exported resourcepack and item mappings. There are 3 ways to map custom items:
+   - `/rainbow map` - maps the custom item you're currently holding in your hand, if any.
+   - `/rainbow mapinventory` - scans your inventory for custom items, and maps all that are found.
+   - `/rainbow auto inventory` - scans all inventory menus and containers you open for custom items, and maps all that are found. This is handy for plugins that offer an inventory menu listing all custom items. Use `/rainbow auto stop` to stop the mapping of custom items.
+3. Once you have mapped all of your custom items, use `/rainbow finish` to finish the pack. Rainbow will then export the resourcepack and item mappings it has created.
+
+If you have any questions or run into any problems, please do feel free to ask for support in the Geyser Discord!
