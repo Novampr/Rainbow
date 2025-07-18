@@ -5,6 +5,7 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import org.geysermc.rainbow.PackManager;
+import org.geysermc.rainbow.pack.BedrockPack;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -30,7 +31,7 @@ public class PackMapper {
                 // TODO maybe report problems here... probably better to do so in pack class though
                 long mapped = itemProvider.nextItems(player, connection)
                         .map(pack::map)
-                        .filter(Optional::isPresent)
+                        .filter(result -> result != BedrockPack.MappingResult.NONE_MAPPED)
                         .count();
                 if (mapped != 0) {
                     player.displayClientMessage(Component.literal("Mapped " + mapped + " items"), false);

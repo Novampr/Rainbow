@@ -27,10 +27,6 @@ public final class PackManager {
         currentPack.ifPresentOrElse(consumer, runnable);
     }
 
-    public <T> Optional<T> run(Function<BedrockPack, T> function) {
-        return currentPack.map(function);
-    }
-
     public Optional<Boolean> finish() {
         Optional<Boolean> success = currentPack.map(BedrockPack::save);
         currentPack = Optional.empty();

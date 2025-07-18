@@ -71,19 +71,19 @@ public class BedrockPack {
         return name;
     }
 
-    public Optional<Boolean> map(ItemStack stack) {
+    public MappingResult map(ItemStack stack) {
         if (stack.isEmpty()) {
-            return Optional.empty();
+            return MappingResult.NONE_MAPPED;
         }
 
         Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
         //noinspection OptionalAssignedToNull - annoying Mojang
         if (patchedModel == null || patchedModel.isEmpty()) {
-            return Optional.empty();
+            return MappingResult.NONE_MAPPED;
         }
         ResourceLocation model = patchedModel.get();
         if (!modelsMapped.add(model)) {
-            return Optional.empty();
+            return MappingResult.NONE_MAPPED;
         }
 
         AtomicBoolean problems = new AtomicBoolean();
@@ -108,7 +108,7 @@ public class BedrockPack {
             }
             bedrockItems.add(bedrockItem);
         }, texturesToExport::add);
-        return Optional.of(problems.get());
+        return problems.get() ? MappingResult.PROBLEMS_OCCURRED : MappingResult.MAPPED_SUCCESSFULLY;
     }
 
     public boolean save() {
@@ -188,5 +188,11 @@ Textures tried to export: %d
     private static PackManifest defaultManifest(String name) {
         return new PackManifest(new PackManifest.Header(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0), PackConstants.ENGINE_VERSION),
                 List.of(new PackManifest.Module(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0))));
+    }
+
+    public enum MappingResult {
+        NONE_MAPPED,
+        MAPPED_SUCCESSFULLY,
+        PROBLEMS_OCCURRED
     }
 }
