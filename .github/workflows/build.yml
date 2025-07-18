@@ -38,7 +38,7 @@ jobs:
         if: success()
         with:
           artifacts: |
-            build/libs/rainbow-*.jar
+            rainbow:build/libs/rainbow-*.jar
 
       - name: Get Version
         if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
