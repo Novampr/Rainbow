@@ -39,7 +39,7 @@ public class GeometryRenderer {
 
         try (OversizedItemRenderer itemRenderer = new OversizedItemRenderer(Minecraft.getInstance().renderBuffers().bufferSource())) {
             //noinspection DataFlowIssue
-            ((PictureInPictureCopyRenderer) itemRenderer).geyser_mappings_generator$allowTextureCopy();
+            ((PictureInPictureCopyRenderer) itemRenderer).rainbow$allowTextureCopy();
             itemRenderer.prepare(oversizedRenderState, new GuiRenderState(), 4);
             writeAsPNG(path, ((PictureInPictureRendererAccessor) itemRenderer).getTexture());
         }

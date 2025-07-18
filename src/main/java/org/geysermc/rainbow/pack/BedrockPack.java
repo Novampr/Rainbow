@@ -154,6 +154,10 @@ public class BedrockPack {
         return success;
     }
 
+    public Path getExportPath() {
+        return exportPath;
+    }
+
     private String createPackSummary() {
         return """
 -- PACK GENERATION REPORT --

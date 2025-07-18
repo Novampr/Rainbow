@@ -3,6 +3,7 @@ package org.geysermc.rainbow;
 import org.geysermc.rainbow.pack.BedrockPack;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -25,6 +26,10 @@ public final class PackManager {
 
     public void runOrElse(Consumer<BedrockPack> consumer, Runnable runnable) {
         currentPack.ifPresentOrElse(consumer, runnable);
+    }
+
+    public Optional<Path> getExportPath() {
+        return currentPack.map(BedrockPack::getExportPath);
     }
 
     public Optional<Boolean> finish() {

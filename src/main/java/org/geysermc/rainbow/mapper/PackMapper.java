@@ -34,10 +34,10 @@ public class PackMapper {
                         .filter(result -> result != BedrockPack.MappingResult.NONE_MAPPED)
                         .count();
                 if (mapped != 0) {
-                    player.displayClientMessage(Component.literal("Mapped " + mapped + " items"), false);
+                    player.displayClientMessage(Component.translatable("chat.rainbow.mapped_items", mapped), false);
                 }
                 if (itemProvider.isDone()) {
-                    player.displayClientMessage(Component.literal("Finished mapping items from provider"), false);
+                    player.displayClientMessage(Component.translatable("chat.rainbow.automatic_mapping_finished"), false);
                     itemProvider = null;
                 }
             }, () -> itemProvider = null);

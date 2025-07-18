@@ -20,7 +20,7 @@ public abstract class PictureInPictureRendererMixin implements AutoCloseable, Pi
     private boolean allowTextureCopy = false;
 
     @Override
-    public void geyser_mappings_generator$allowTextureCopy() {
+    public void rainbow$allowTextureCopy() {
         if (texture != null) {
             throw new IllegalStateException("texture already created");
         }
