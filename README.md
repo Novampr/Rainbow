@@ -23,6 +23,8 @@ and more.
 
 ## Usage
 
+You can download the latest version of Rainbow [here](https://download.geysermc.org/v2/projects/rainbow/versions/latest/builds/latest/downloads/rainbow).
+
 To use Rainbow's generated item mappings, you must use a build of Geyser with support for the v2 item mappings format.
 You can download those [here](https://github.com/geyserMC/geyser/pull/5189).
 
@@ -36,7 +38,7 @@ you use them as follows:
    - `/rainbow auto inventory` - scans all inventory menus and containers you open for custom items, and maps all that are found. This is handy for plugins that offer an inventory menu listing all custom items. Use `/rainbow auto stop` to stop the mapping of custom items.
 3. Once you have mapped all of your custom items, use `/rainbow finish` to finish the pack. Rainbow will then export the resourcepack and item mappings it has created.
 
-When you've finished your pack, navigate to the `.minecraft/rainbow/<name>` folder. You can also click on the "Wrote pack to disk" in chat to open this folder.
+When you've finished your pack, navigate to the `.minecraft/rainbow/<name>` folder. You can also click on the `Wrote pack to disk` in chat to open this folder.
 In this folder, you'll find 3 important files:
 
 - `geyser_mappings.json`: you need to put this file in the `custom_mappings` folder in Geyser's config folder.
