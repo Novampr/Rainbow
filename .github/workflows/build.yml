@@ -56,21 +56,21 @@ jobs:
           appPrivateKey: ${{ secrets.RELEASE_APP_PK }}
           files: |
             rainbow:build/libs/rainbow-*.jar
-          releaseEnabled: false
+          releaseEnabled: true
           saveMetadata: true
           releaseProject: 'rainbow'
           releaseVersion: ${{ steps.get-version.outputs.VERSION }}
 
-      - name: Publish to Downloads API
-        if: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
-        uses: GeyserMC/actions/upload-release@feature/globs
-        with:
-          username: ${{ vars.DOWNLOADS_USERNAME }}
-          privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
-          host: ${{ secrets.DOWNLOADS_SERVER_IP }}
-          files: |
-            build/libs/rainbow-*.jar
-          changelog: ${{ steps.metadata.outputs.body }}
+#      - name: Publish to Downloads API
+#        if: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
+#        uses: GeyserMC/actions/upload-release@feature/globs
+#        with:
+#          username: ${{ vars.DOWNLOADS_USERNAME }}
+#          privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
+#          host: ${{ secrets.DOWNLOADS_SERVER_IP }}
+#          files: |
+#            build/libs/rainbow-*.jar - TODO does not support globs!
+#          changelog: ${{ steps.metadata.outputs.body }}
 
 #      - name: Publish to Modrinth
 #        if: ${{ success() && github.repository == 'GeyserMC/rainbow' && github.ref_name == 'master' }}
@@ -80,11 +80,11 @@ jobs:
 #          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
 #        run: ./gradlew modrinth
 
-#      - name: Notify Discord
-#        if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
-#        uses: GeyserMC/actions/notify-discord@master
-#        with:
-#          discordWebhook: ${{ secrets.DISCORD_WEBHOOK }}
-#          status: ${{ job.status }}
-#          body: ${{ steps.metadata.outputs.body }}
-#          includeDownloads: ${{ github.ref_name == 'master' }}
+      - name: Notify Discord
+        if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
+        uses: GeyserMC/actions/notify-discord@master
+        with:
+          discordWebhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ job.status }}
+          body: ${{ steps.metadata.outputs.body }}
+          includeDownloads: ${{ github.ref_name == 'master' }}
