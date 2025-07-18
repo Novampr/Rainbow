@@ -38,7 +38,7 @@ jobs:
         if: success()
         with:
           artifacts: |
-            rainbow:build/libs/rainbow.jar
+            rainbow:build/libs/Rainbow.jar
 
       - name: Get Version
         if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
@@ -55,7 +55,7 @@ jobs:
           appID: ${{ secrets.RELEASE_APP_ID }}
           appPrivateKey: ${{ secrets.RELEASE_APP_PK }}
           files: |
-            rainbow:build/libs/rainbow.jar
+            rainbow:build/libs/Rainbow.jar
           releaseEnabled: false
           saveMetadata: true
           releaseProject: 'rainbow'
@@ -69,7 +69,7 @@ jobs:
           privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
           host: ${{ secrets.DOWNLOADS_SERVER_IP }}
           files: |
-            build/libs/rainbow.jar
+            build/libs/Rainbow.jar
           changelog: ${{ steps.metadata.outputs.body }}
 
 #      - name: Publish to Modrinth
