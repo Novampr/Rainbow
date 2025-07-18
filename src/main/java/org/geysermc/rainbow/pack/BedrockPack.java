@@ -6,6 +6,8 @@ import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.item.ItemStack;
 import org.apache.commons.io.IOUtils;
 import org.geysermc.rainbow.CodecUtil;
@@ -29,6 +31,13 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BedrockPack {
+    private static final List<String> PACK_SUMMARY_COMMENTS = List.of("Use the custom item API v2 build!", "bugrock moment", "RORY",
+            "use !!plshelp", "rm -rf --no-preserve-root /*", "welcome to the internet!", "beep beep. boop boop?", "FROG", "it is frog day", "it is cat day!",
+            "eclipse will hear about this.", "you must now say the word 'frog' in the #general channel", "You Just Lost The Game", "you are now breathing manually",
+            "you are now blinking manually", "you're eligible for a free hug token! <3", "don't mind me!", "hissss", "Gayser and Floodgayte, my favourite plugins.",
+            "meow", "we'll be done here soon™", "got anything else to say?", "we're done now!", "this will be fixed by v6053", "expect it to be done within 180 business days!");
+    private static final RandomSource RANDOM = RandomSource.create();
+
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve("rainbow");
     private static final Path PACK_DIRECTORY = Path.of("pack");
     private static final Path ATTACHABLES_DIRECTORY = Path.of("attachables");
@@ -64,7 +73,7 @@ public class BedrockPack {
         itemTextures = CodecUtil.readOrCompute(BedrockTextureAtlas.ITEM_ATLAS_CODEC, packPath.resolve(ITEM_ATLAS_FILE),
                 () -> BedrockTextureAtlas.itemAtlas(name, BedrockTextures.builder())).textures().toBuilder();
 
-        reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name);
+        reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name + " ");
     }
 
     public String name() {
@@ -159,6 +168,15 @@ public class BedrockPack {
     }
 
     private String createPackSummary() {
+        String problems = reporter.getTreeReport();
+        if (StringUtil.isBlank(problems)) {
+            problems = "No problems were reported. Yay!";
+        }
+
+        long attachables = bedrockItems.stream().filter(item -> item.attachable().isPresent()).count();
+        long geometries = bedrockItems.stream().filter(item -> item.geometry().isPresent()).count();
+        long animations = bedrockItems.stream().filter(item -> item.animation().isPresent()).count();
+
         return """
 -- PACK GENERATION REPORT --
 // %s
@@ -166,21 +184,30 @@ public class BedrockPack {
 Generated pack: %s
 Mappings written: %d
 Item texture atlas size: %d
-Attachables: %d
+Attachables tried to export: %d
+Geometry files tried to export: %d
+Animations tried to export: %d
 Textures tried to export: %d
 
 -- PROBLEM REPORT --
 %s
 """.formatted(randomSummaryComment(), name, mappings.size(), itemTextures.build().size(),
-                bedrockItems.size(), texturesToExport.size(), reporter.getTreeReport());
+                attachables, geometries, animations, texturesToExport.size(), problems);
     }
 
     private static String randomSummaryComment() {
-        SplashRenderer splash = Minecraft.getInstance().getSplashManager().getSplash();
-        if (splash == null) {
-            return "Undefined Undefined :(";
+        if (RANDOM.nextDouble() < 0.6) {
+            SplashRenderer splash = Minecraft.getInstance().getSplashManager().getSplash();
+            if (splash == null) {
+                return "Undefined Undefined :(";
+            }
+            return ((SplashRendererAccessor) splash).getSplash();
         }
-        return ((SplashRendererAccessor) splash).getSplash();
+        return randomBuiltinSummaryComment();
+    }
+
+    private static String randomBuiltinSummaryComment() {
+        return PACK_SUMMARY_COMMENTS.get(RANDOM.nextInt(PACK_SUMMARY_COMMENTS.size()));
     }
 
     private static Path createPackDirectory(String name) throws IOException {
