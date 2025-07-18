@@ -4,7 +4,8 @@
 [![Discord](https://img.shields.io/discord/613163671870242838.svg?color=%237289da&label=discord)](https://discord.gg/geysermc)
 
 Rainbow is a client-side Minecraft mod for the Fabric modloader to generate Geyser item mappings and bedrock resourcepacks
-for use with Geyser's [custom item API (v2)](https://github.com/geyserMC/geyser/pull/5189).
+for use with Geyser's [custom item API (v2)](https://github.com/geyserMC/geyser/pull/5189). Rainbow is available
+for Minecraft 1.21.6, 1.21.7 and 1.21.8.
 
 Rainbow is currently experimental and capable of the following:
 
@@ -34,5 +35,15 @@ you use them as follows:
    - `/rainbow mapinventory` - scans your inventory for custom items, and maps all that are found.
    - `/rainbow auto inventory` - scans all inventory menus and containers you open for custom items, and maps all that are found. This is handy for plugins that offer an inventory menu listing all custom items. Use `/rainbow auto stop` to stop the mapping of custom items.
 3. Once you have mapped all of your custom items, use `/rainbow finish` to finish the pack. Rainbow will then export the resourcepack and item mappings it has created.
+
+When you've finished your pack, navigate to the `.minecraft/rainbow/<name>` folder. You can also click on the "Wrote pack to disk" in chat to open this folder.
+In this folder, you'll find 3 important files:
+
+- `geyser_mappings.json`: you need to put this file in the `custom_mappings` folder in Geyser's config folder.
+- `pack.zip`: you need to put this file in the `packs` folder in Geyser's config folder.
+- `report.txt`: you don't need to do anything with this file, but it contains information about generated assets and possible problems that occurred.
+
+Once you have taken these steps, restart your server. Bedrock players should then download the generated pack upon joining,
+and if everything went well, they should be able to see custom items!
 
 If you have any questions or run into any problems, please do feel free to ask for support in the Geyser Discord!
