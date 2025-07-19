@@ -34,4 +34,8 @@ public class Rainbow implements ClientModInitializer {
     public static ResourceLocation getModdedLocation(String path) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
+
+    public static String fileSafeResourceLocation(ResourceLocation location) {
+        return location.toString().replace(':', '.').replace('/', '_');
+    }
 }

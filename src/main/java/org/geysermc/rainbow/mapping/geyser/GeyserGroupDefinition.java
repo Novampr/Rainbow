@@ -21,16 +21,16 @@ public record GeyserGroupDefinition(Optional<ResourceLocation> model, List<Geyse
         return new GeyserGroupDefinition(model, Stream.concat(definitions.stream(), Stream.of(mapping)).toList());
     }
 
-    public boolean isFor(ResourceLocation model) {
-        return this.model.isPresent() && this.model.get().equals(model);
+    public boolean isFor(Optional<ResourceLocation> model) {
+        return this.model.isPresent() && model.isPresent() && this.model.get().equals(model.get());
     }
 
-    public boolean conflictsWith(Optional<ResourceLocation> parentModel, GeyserSingleDefinition other) {
+    public boolean conflictsWith(Optional<ResourceLocation> parentModel, GeyserItemDefinition other) {
         Optional<ResourceLocation> thisModel = model.or(() -> parentModel);
         for (GeyserMapping definition : definitions) {
             if (definition instanceof GeyserGroupDefinition group && group.conflictsWith(thisModel, other)) {
                 return true;
-            } else if (definition instanceof GeyserSingleDefinition single && single.conflictsWith(thisModel, other)) {
+            } else if (definition instanceof GeyserItemDefinition item && item.conflictsWith(thisModel, other)) {
                 return true;
             }
         }

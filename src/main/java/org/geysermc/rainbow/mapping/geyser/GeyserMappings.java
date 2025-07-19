@@ -36,8 +36,8 @@ public class GeyserMappings {
         }
     }
 
-    public void map(Holder<Item> item, GeyserSingleDefinition mapping) {
-        ResourceLocation model = mapping.model().orElseThrow();
+    public void map(Holder<Item> item, GeyserItemDefinition mapping) {
+        Optional<ResourceLocation> model = mapping instanceof GeyserSingleDefinition single ? Optional.of(single.model().orElseThrow()) : Optional.empty();
         Optional<GeyserGroupDefinition> modelGroup = Optional.empty();
 
         Collection<GeyserMapping> existingMappings = new ArrayList<>(mappings.get(item));
@@ -48,19 +48,22 @@ public class GeyserMappings {
                 }
                 modelGroup = Optional.of(existingGroup);
                 break;
-            } else if (existing instanceof GeyserSingleDefinition single) {
-                if (single.conflictsWith(Optional.empty(), mapping)) {
-                    throw new IllegalArgumentException("Mapping conflicts with existing single mapping");
-                } else if (model.equals(single.model().orElseThrow())) {
-                    mappings.remove(item, single);
-                    modelGroup = Optional.of(new GeyserGroupDefinition(Optional.of(model), List.of(single.withoutModel())));
+            } else if (existing instanceof GeyserItemDefinition itemDefinition) {
+                if (itemDefinition.conflictsWith(Optional.empty(), mapping)) {
+                    throw new IllegalArgumentException("Mapping conflicts with existing item mapping");
+                } else if (model.isPresent() && itemDefinition instanceof GeyserSingleDefinition single && model.get().equals(single.model().orElseThrow())) {
+                    mappings.remove(item, itemDefinition);
+                    modelGroup = Optional.of(new GeyserGroupDefinition(model, List.of(single.withoutModel())));
                 }
             }
         }
 
         if (modelGroup.isPresent()) {
             mappings.remove(item, modelGroup.get());
-            mappings.put(item, modelGroup.get().with(mapping.withoutModel()));
+
+            // We're only putting mappings in groups when they're single definitions - legacy mappings always go ungrouped
+            assert mapping instanceof GeyserSingleDefinition;
+            mappings.put(item, modelGroup.get().with(((GeyserSingleDefinition) mapping).withoutModel()));
         } else {
             mappings.put(item, mapping);
         }

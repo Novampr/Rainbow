@@ -11,7 +11,7 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.EquipmentSlot;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
-import org.geysermc.rainbow.mapping.geyser.GeyserSingleDefinition;
+import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.pack.BedrockTextures;
 import org.geysermc.rainbow.pack.BedrockVersion;
 import org.geysermc.rainbow.pack.geometry.BedrockGeometry;
@@ -37,7 +37,7 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
 
     public void save(Path attachablesDirectory) throws IOException {
         // Get a safe attachable path by using Geyser's way of getting icons
-        CodecUtil.trySaveJson(CODEC, this, attachablesDirectory.resolve(GeyserSingleDefinition.iconFromResourceLocation(info.identifier) + ".json"));
+        CodecUtil.trySaveJson(CODEC, this, attachablesDirectory.resolve(Rainbow.fileSafeResourceLocation(info.identifier) + ".json"));
     }
 
     public static Builder builder(ResourceLocation identifier) {

@@ -1,7 +1,7 @@
 package org.geysermc.rainbow.pack;
 
 import net.minecraft.resources.ResourceLocation;
-import org.geysermc.rainbow.mapping.geyser.GeyserSingleDefinition;
+import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.pack.animation.BedrockAnimation;
 import org.geysermc.rainbow.pack.attachable.BedrockAttachable;
 import org.geysermc.rainbow.pack.geometry.BedrockGeometry;
@@ -21,7 +21,7 @@ public record BedrockItem(ResourceLocation identifier, String textureName, Resou
             geometry.get().save(geometryDirectory);
         }
         if (animation.isPresent()) {
-            animation.get().save(animationDirectory, GeyserSingleDefinition.iconFromResourceLocation(identifier));
+            animation.get().save(animationDirectory, Rainbow.fileSafeResourceLocation(identifier));
         }
     }
 }

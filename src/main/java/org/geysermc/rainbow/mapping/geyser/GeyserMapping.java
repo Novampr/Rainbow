@@ -21,6 +21,7 @@ public interface GeyserMapping {
 
     enum Type implements StringRepresentable {
         SINGLE("definition", GeyserSingleDefinition.CODEC),
+        LEGACY("legacy", GeyserLegacyDefinition.CODEC),
         GROUP("group", GeyserGroupDefinition.CODEC);
 
         public static final Codec<Type> CODEC = StringRepresentable.fromEnum(Type::values);
