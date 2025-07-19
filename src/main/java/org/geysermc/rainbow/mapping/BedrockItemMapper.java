@@ -173,6 +173,8 @@ public class BedrockItemMapper {
                 ItemModel gui = cases.get(ItemDisplayContext.GUI);
                 if (gui != null) {
                     context.reporter.report(() -> "unsupported select model property display_context, only mapping \"gui\" case");
+                    mapItem(gui, context.child("select GUI display_context case (unsupported property) "));
+                    return;
                 }
             }
             context.reporter.report(() -> "unsupported select model property " + property + ", only mapping fallback");
