@@ -1,5 +1,7 @@
 package org.geysermc.rainbow.pack;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.SplashRenderer;
@@ -9,11 +11,13 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomModelData;
 import org.apache.commons.io.IOUtils;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
 import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
+import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mapping.geyser.GeyserMappings;
 import org.geysermc.rainbow.mixin.SplashRendererAccessor;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +40,8 @@ public class BedrockPack {
             "use !!plshelp", "rm -rf --no-preserve-root /*", "welcome to the internet!", "beep beep. boop boop?", "FROG", "it is frog day", "it is cat day!",
             "eclipse will hear about this.", "you must now say the word 'frog' in the #general channel", "You Just Lost The Game", "you are now breathing manually",
             "you are now blinking manually", "you're eligible for a free hug token! <3", "don't mind me!", "hissss", "Gayser and Floodgayte, my favourite plugins.",
-            "meow", "we'll be done here soon™", "got anything else to say?", "we're done now!", "this will be fixed by v6053", "expect it to be done within 180 business days!");
+            "meow", "we'll be done here soon™", "got anything else to say?", "we're done now!", "this will be fixed by v6053", "expect it to be done within 180 business days!",
+            "any colour you like", "someone tell Mojang about this");
     private static final RandomSource RANDOM = RandomSource.create();
 
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve(Rainbow.MOD_ID);
@@ -62,6 +67,7 @@ public class BedrockPack {
     private final Set<BedrockItem> bedrockItems = new HashSet<>();
     private final Set<ResourceLocation> texturesToExport = new HashSet<>();
     private final Set<ResourceLocation> modelsMapped = new HashSet<>();
+    private final IntSet customModelDataMapped = new IntOpenHashSet();
 
     private final ProblemReporter.Collector reporter;
 
@@ -90,16 +96,6 @@ public class BedrockPack {
             return MappingResult.NONE_MAPPED;
         }
 
-        Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
-        //noinspection OptionalAssignedToNull - annoying Mojang
-        if (patchedModel == null || patchedModel.isEmpty()) {
-            return MappingResult.NONE_MAPPED;
-        }
-        ResourceLocation model = patchedModel.get();
-        if (!modelsMapped.add(model)) {
-            return MappingResult.NONE_MAPPED;
-        }
-
         AtomicBoolean problems = new AtomicBoolean();
         ProblemReporter mapReporter = new ProblemReporter() {
 
@@ -114,14 +110,34 @@ public class BedrockPack {
                 reporter.report(problem);
             }
         };
-
-        BedrockItemMapper.tryMapStack(stack, model, mapReporter, mappings, packPath, bedrockItem -> {
-            itemTextures.withItemTexture(bedrockItem);
-            if (bedrockItem.exportTexture()) {
-                texturesToExport.add(bedrockItem.texture());
+        PackContext context = new PackContext(mappings, packPath, item -> {
+            itemTextures.withItemTexture(item);
+            if (item.exportTexture()) {
+                texturesToExport.add(item.texture());
             }
-            bedrockItems.add(bedrockItem);
+            bedrockItems.add(item);
         }, texturesToExport::add);
+
+        Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
+        //noinspection OptionalAssignedToNull - annoying Mojang
+        if (patchedModel == null || patchedModel.isEmpty()) {
+            CustomModelData customModelData = stack.get(DataComponents.CUSTOM_MODEL_DATA);
+            Float firstNumber;
+            if (customModelData == null || (firstNumber = customModelData.getFloat(0)) == null
+                    || !customModelDataMapped.add((firstNumber.intValue()))) {
+                return MappingResult.NONE_MAPPED;
+            }
+
+            BedrockItemMapper.tryMapStack(stack, firstNumber.intValue(), mapReporter, context);
+        } else {
+            ResourceLocation model = patchedModel.get();
+            if (!modelsMapped.add(model)) {
+                return MappingResult.NONE_MAPPED;
+            }
+
+            BedrockItemMapper.tryMapStack(stack, model, mapReporter, context);
+        }
+
         return problems.get() ? MappingResult.PROBLEMS_OCCURRED : MappingResult.MAPPED_SUCCESSFULLY;
     }
 

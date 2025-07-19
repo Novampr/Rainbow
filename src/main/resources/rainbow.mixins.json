@@ -13,6 +13,7 @@
     "ModelManagerMixin",
     "PictureInPictureRendererAccessor",
     "PictureInPictureRendererMixin",
+    "RangeSelectItemModelAccessor",
     "SelectItemModelAccessor",
     "SelectItemModelMixin",
     "SelectItemModelMixin$UnbakedSwitchMixin",
