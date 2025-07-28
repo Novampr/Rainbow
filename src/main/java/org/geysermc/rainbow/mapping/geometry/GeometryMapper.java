@@ -19,9 +19,9 @@ public class GeometryMapper {
 
     public static BedrockGeometryContext mapGeometry(String identifier, String boneName, ResolvedModel model, ResourceLocation texture) {
         BedrockGeometry.Builder builder = BedrockGeometry.builder(identifier);
-        // Blockbench seems to always use these values
-        builder.withVisibleBoundsWidth(2.0F);
-        builder.withVisibleBoundsHeight(2.5F);
+        // Blockbench seems to always use these values TODO that's wrong
+        builder.withVisibleBoundsWidth(4.0F);
+        builder.withVisibleBoundsHeight(4.0F);
         builder.withVisibleBoundsOffset(new Vector3f(0.0F, 0.75F, 0.0F));
 
         // TODO proper texture size
@@ -35,6 +35,7 @@ public class GeometryMapper {
 
         SimpleUnbakedGeometry geometry = (SimpleUnbakedGeometry) model.getTopGeometry();
         for (BlockElement element : geometry.elements()) {
+            // TODO the origin here is wrong, some models seem to be mirrored weirdly in blockbench
             BedrockGeometry.Cube cube = mapBlockElement(element).build();
             bone.withCube(cube);
             min.min(cube.origin());
@@ -81,7 +82,8 @@ public class GeometryMapper {
 
         BlockElementRotation rotation = element.rotation();
         if (rotation != null) {
-            builder.withPivot(rotation.origin().sub(CENTRE_OFFSET, new Vector3f()));
+            // MC multiplies model origin by 0.0625 when loading rotation origin
+            builder.withPivot(rotation.origin().div(0.0625F, new Vector3f()).sub(CENTRE_OFFSET));
 
             Vector3f bedrockRotation = switch (rotation.axis()) {
                 case X -> new Vector3f(rotation.angle(), 0.0F, 0.0F);
