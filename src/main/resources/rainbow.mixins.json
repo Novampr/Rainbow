@@ -17,7 +17,8 @@
     "SelectItemModelAccessor",
     "SelectItemModelMixin",
     "SelectItemModelMixin$UnbakedSwitchMixin",
-    "SplashRendererAccessor"
+    "SplashRendererAccessor",
+    "TextureSlotsAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

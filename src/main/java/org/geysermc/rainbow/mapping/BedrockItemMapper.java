@@ -52,6 +52,7 @@ import org.geysermc.rainbow.mapping.geyser.predicate.GeyserPredicate;
 import org.geysermc.rainbow.mixin.ConditionalItemModelAccessor;
 import org.geysermc.rainbow.mixin.RangeSelectItemModelAccessor;
 import org.geysermc.rainbow.mixin.SelectItemModelAccessor;
+import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
 import org.geysermc.rainbow.pack.BedrockItem;
 import org.geysermc.rainbow.pack.BedrockTextures;
 
@@ -108,31 +109,38 @@ public class BedrockItemMapper {
                 ((ResolvedModelAccessor) Minecraft.getInstance().getModelManager()).rainbow$getResolvedModel(itemModelLocation)
                         .ifPresentOrElse(itemModel -> {
                             ResolvedModel parentModel = itemModel.parent();
-                            boolean handheld = false;
-                            if (parentModel != null) {
-                                // debugName() returns the resource location of the model as a string
-                                handheld = HANDHELD_MODELS.contains(ResourceLocation.parse(parentModel.debugName()));
-                            }
+                            // debugName() returns the resource location of the model as a string
+                            boolean handheld = parentModel != null && HANDHELD_MODELS.contains(ResourceLocation.parse(parentModel.debugName()));
 
-                            ResourceLocation bedrockIdentifier = itemModelLocation;
-                            if (bedrockIdentifier.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
+                            ResourceLocation bedrockIdentifier;
+                            if (itemModelLocation.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
                                 bedrockIdentifier = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModelLocation.getPath());
+                            } else {
+                                bedrockIdentifier = itemModelLocation;
                             }
 
-                            ResourceLocation texture = itemModelLocation;
                             Material layer0Texture = itemModel.getTopTextureSlots().getMaterial("layer0");
-                            Optional<ResolvedModel> customGeometry = Optional.empty();
+                            Optional<ResourceLocation> texture;
+                            Optional<ResolvedModel> customGeometry;
                             if (layer0Texture != null) {
-                                texture = layer0Texture.texture();
+                                texture = Optional.of(layer0Texture.texture());
+                                customGeometry = Optional.empty();
                             } else {
+                                // We can't stitch multiple textures together yet, so we just grab the first one we see
+                                // This will only work properly for models with just one texture
+                                texture = ((TextureSlotsAccessor) itemModel.getTopTextureSlots()).getResolvedValues().values().stream()
+                                        .map(Material::texture)
+                                        .findAny();
                                 // Unknown texture (doesn't use layer0), so we immediately assume the geometry is custom
                                 // This check should probably be done differently
                                 customGeometry = Optional.of(itemModel);
                             }
 
-                            // Not a problem, but just report to get the model printed in the report file
-                            context.reporter.report(() -> "creating mapping for block model " + itemModelLocation);
-                            context.create(bedrockIdentifier, texture, handheld, customGeometry);
+                            texture.ifPresentOrElse(itemTexture -> {
+                                // Not a problem, but just report to get the model printed in the report file
+                                context.reporter.report(() -> "creating mapping for block model " + itemModelLocation);
+                                context.create(bedrockIdentifier, itemTexture, handheld, customGeometry);
+                            }, () -> context.reporter.report(() -> "not mapping block model " + itemModelLocation + " because it has no texture"));
                         }, () -> context.reporter.report(() -> "missing block model " + itemModelLocation));
             }
             case ConditionalItemModel conditional -> mapConditionalModel(conditional, context.child("condition model "));
