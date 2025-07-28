@@ -82,7 +82,7 @@ public class BedrockItemMapper {
                     float scaledCustomModelData = customModelData * accessor.getScale();
 
                     int modelIndex = RangeSelectItemModelAccessor.invokeLastIndexLessOrEqual(accessor.getThresholds(), scaledCustomModelData);
-                    ItemModel model = modelIndex == -1 ? accessor.getFallback() : accessor.getModels()[index];
+                    ItemModel model = modelIndex == -1 ? accessor.getFallback() : accessor.getModels()[modelIndex];
                     mapItem(model, stack, reporter, base -> new GeyserLegacyDefinition(base, customModelData), context);
                 } else {
                     reporter.report(() -> "range_dispatch custom model data property index is not zero, unable to apply custom model data");
