@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.ExtraCodecs;
@@ -47,10 +48,14 @@ public class CodecUtil {
     }
 
     public static <T> T tryReadJson(Codec<T> codec, Path path) throws IOException {
+        return tryReadJson(codec, path, JsonOps.INSTANCE);
+    }
+
+    public static <T> T tryReadJson(Codec<T> codec, Path path, DynamicOps<JsonElement> ops) throws IOException {
         try {
             String raw = Files.readString(path);
             JsonElement json = GSON.fromJson(raw, JsonElement.class);
-            return codec.parse(JsonOps.INSTANCE, json).getOrThrow();
+            return codec.parse(ops, json).getOrThrow();
         } catch (IOException exception) {
             Rainbow.LOGGER.warn("Failed to read JSON file {}!", path, exception);
             throw exception;
@@ -58,7 +63,11 @@ public class CodecUtil {
     }
 
     public static <T> void trySaveJson(Codec<T> codec, T object, Path path) throws IOException {
-        JsonElement json = codec.encodeStart(JsonOps.INSTANCE, object).getOrThrow();
+        trySaveJson(codec, object, path, JsonOps.INSTANCE);
+    }
+
+    public static <T> void trySaveJson(Codec<T> codec, T object, Path path, DynamicOps<JsonElement> ops) throws IOException {
+        JsonElement json = codec.encodeStart(ops, object).getOrThrow();
 
         try {
             ensureDirectoryExists(path.getParent());
