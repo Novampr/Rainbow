@@ -24,6 +24,7 @@ import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -63,6 +64,9 @@ import java.util.stream.Stream;
 
 public class BedrockItemMapper {
     private static final List<ResourceLocation> HANDHELD_MODELS = Stream.of("item/handheld", "item/handheld_rod", "item/handheld_mace")
+            .map(ResourceLocation::withDefaultNamespace)
+            .toList();
+    private static final List<ResourceLocation> TRIMMABLE_ARMOR_TAGS = Stream.of("is_armor", "trimmable_armors")
             .map(ResourceLocation::withDefaultNamespace)
             .toList();
 
@@ -217,8 +221,16 @@ public class BedrockItemMapper {
 
         public void create(ResourceLocation bedrockIdentifier, ResourceLocation texture, boolean displayHandheld,
                            Optional<ResolvedModel> customModel) {
+            List<ResourceLocation> tags;
+            if (stack.is(ItemTags.TRIMMABLE_ARMOR)) {
+                tags = TRIMMABLE_ARMOR_TAGS;
+            } else {
+                tags = List.of();
+            }
+
             GeyserBaseDefinition base = new GeyserBaseDefinition(bedrockIdentifier, Optional.of(stack.getHoverName().getString()), predicateStack,
-                    new GeyserBaseDefinition.BedrockOptions(Optional.empty(), true, displayHandheld, calculateProtectionValue(stack)), stack.getComponentsPatch());
+                    new GeyserBaseDefinition.BedrockOptions(Optional.empty(), true, displayHandheld, calculateProtectionValue(stack), tags),
+                    stack.getComponentsPatch());
             try {
                 packContext.mappings().map(stack.getItemHolder(), definitionCreator.apply(base));
             } catch (Exception exception) {

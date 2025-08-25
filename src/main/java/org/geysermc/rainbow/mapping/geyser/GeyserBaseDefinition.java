@@ -64,15 +64,16 @@ public record GeyserBaseDefinition(ResourceLocation bedrockIdentifier, Optional<
         return bedrockOptions.icon.orElse(Rainbow.fileSafeResourceLocation(bedrockIdentifier));
     }
 
-    public record BedrockOptions(Optional<String> icon, boolean allowOffhand, boolean displayHandheld, int protectionValue) {
+    public record BedrockOptions(Optional<String> icon, boolean allowOffhand, boolean displayHandheld, int protectionValue, List<ResourceLocation> tags) {
         public static final Codec<BedrockOptions> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         Codec.STRING.optionalFieldOf("icon").forGetter(BedrockOptions::icon),
                         Codec.BOOL.optionalFieldOf("allow_offhand", true).forGetter(BedrockOptions::allowOffhand),
                         Codec.BOOL.optionalFieldOf("display_handheld", false).forGetter(BedrockOptions::displayHandheld),
-                        Codec.INT.optionalFieldOf("protection_value", 0).forGetter(BedrockOptions::protectionValue)
+                        Codec.INT.optionalFieldOf("protection_value", 0).forGetter(BedrockOptions::protectionValue),
+                        ResourceLocation.CODEC.listOf().optionalFieldOf("tags", List.of()).forGetter(BedrockOptions::tags)
                 ).apply(instance, BedrockOptions::new)
         );
-        public static final BedrockOptions DEFAULT = new BedrockOptions(Optional.empty(), true, false, 0);
+        public static final BedrockOptions DEFAULT = new BedrockOptions(Optional.empty(), true, false, 0, List.of());
     }
 }
