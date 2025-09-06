@@ -9,7 +9,9 @@ val loaderVersion = properties["loader_version"]!! as String
 val modVersion = properties["mod_version"]!! as String
 val supportedVersions = properties["supported_versions"]!! as String
 val archivesBaseName = properties["archives_base_name"]!! as String
+
 val fabricVersion = properties["fabric_version"]!! as String
+val packConverterVersion = properties["pack_converter_version"]!! as String
 
 val targetJavaVersion = 21
 
@@ -17,6 +19,16 @@ repositories {
     maven {
         name = "ParchmentMC"
         url = uri("https://maven.parchmentmc.org")
+    }
+
+    maven {
+        name = "Jitpack"
+        url = uri("https://jitpack.io")
+    }
+
+    maven {
+        name = "Open Collaboration"
+        url = uri("https://repo.opencollab.dev/main")
     }
 }
 
@@ -30,6 +42,10 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${loaderVersion}")
 
     modImplementation("net.fabricmc.fabric-api:fabric-api:${fabricVersion}")
+
+    include(implementation("com.github.GeyserMC.unnamed-creative:creative-api:817fa982c4")!!)
+    include(implementation("com.github.GeyserMC.unnamed-creative:creative-serializer-minecraft:817fa982c4")!!)
+    include(implementation("org.geysermc.pack:converter:${packConverterVersion}")!!)
 }
 
 tasks {
