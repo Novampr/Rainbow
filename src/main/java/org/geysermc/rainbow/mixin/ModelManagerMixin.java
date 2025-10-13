@@ -22,7 +22,7 @@ public abstract class ModelManagerMixin implements PreparableReloadListener, Aut
     @Unique
     private Map<ResourceLocation, ResolvedModel> unbakedResolvedModels;
 
-    @WrapOperation(method = "method_65753", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;join()Ljava/lang/Object;", ordinal = 0))
+    @WrapOperation(method = "method_65753", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;join()Ljava/lang/Object;", ordinal = 1))
     private static Object setResolvedModels(CompletableFuture<?> instance, Operation<Object> original) {
         Object resolved = original.call(instance);
         try {
