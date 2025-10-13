@@ -3,20 +3,16 @@
   "minVersion": "0.8",
   "package": "org.geysermc.rainbow.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": [
+    "LateBoundIdMapperAccessor"
+  ],
   "client": [
-    "BlockModelWrapperMixin",
-    "BlockModelWrapperMixin$UnbakedMixin",
-    "ConditionalItemModelAccessor",
     "EntityRenderDispatcherAccessor",
     "GuiItemRenderStateMixin",
     "ModelManagerMixin",
     "PictureInPictureRendererAccessor",
     "PictureInPictureRendererMixin",
     "RangeSelectItemModelAccessor",
-    "SelectItemModelAccessor",
-    "SelectItemModelMixin",
-    "SelectItemModelMixin$UnbakedSwitchMixin",
     "SplashRendererAccessor",
     "TextureSlotsAccessor"
   ],

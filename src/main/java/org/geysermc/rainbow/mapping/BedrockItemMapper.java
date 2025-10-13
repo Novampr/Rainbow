@@ -1,10 +1,11 @@
 package org.geysermc.rainbow.mapping;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.BlockModelWrapper;
+import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.renderer.item.ConditionalItemModel;
 import net.minecraft.client.renderer.item.ItemModel;
+import net.minecraft.client.renderer.item.ItemModels;
 import net.minecraft.client.renderer.item.RangeSelectItemModel;
 import net.minecraft.client.renderer.item.SelectItemModel;
 import net.minecraft.client.renderer.item.properties.conditional.Broken;
@@ -17,7 +18,6 @@ import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemMode
 import net.minecraft.client.renderer.item.properties.select.Charge;
 import net.minecraft.client.renderer.item.properties.select.ContextDimension;
 import net.minecraft.client.renderer.item.properties.select.DisplayContext;
-import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.ResolvedModel;
@@ -34,9 +34,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
-import org.geysermc.rainbow.accessor.BlockModelWrapperLocationAccessor;
+import org.apache.commons.lang3.ArrayUtils;
 import org.geysermc.rainbow.accessor.ResolvedModelAccessor;
-import org.geysermc.rainbow.accessor.SelectItemModelCasesAccessor;
 import org.geysermc.rainbow.mapping.animation.AnimationMapper;
 import org.geysermc.rainbow.mapping.animation.BedrockAnimationContext;
 import org.geysermc.rainbow.mapping.attachable.AttachableMapper;
@@ -50,9 +49,8 @@ import org.geysermc.rainbow.mapping.geyser.GeyserSingleDefinition;
 import org.geysermc.rainbow.mapping.geyser.predicate.GeyserConditionPredicate;
 import org.geysermc.rainbow.mapping.geyser.predicate.GeyserMatchPredicate;
 import org.geysermc.rainbow.mapping.geyser.predicate.GeyserPredicate;
-import org.geysermc.rainbow.mixin.ConditionalItemModelAccessor;
+import org.geysermc.rainbow.mixin.LateBoundIdMapperAccessor;
 import org.geysermc.rainbow.mixin.RangeSelectItemModelAccessor;
-import org.geysermc.rainbow.mixin.SelectItemModelAccessor;
 import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
 import org.geysermc.rainbow.pack.BedrockItem;
 import org.geysermc.rainbow.pack.BedrockTextures;
@@ -70,91 +68,103 @@ public class BedrockItemMapper {
             .map(ResourceLocation::withDefaultNamespace)
             .toList();
 
+    private static ResolvedModelAccessor getModels() {
+        return (ResolvedModelAccessor) Minecraft.getInstance().getModelManager();
+    }
+
+    private static ResourceLocation getModelId(ItemModel.Unbaked model) {
+        //noinspection unchecked
+        return ((LateBoundIdMapperAccessor<ResourceLocation, ?>) ItemModels.ID_MAPPER).getIdToValue().inverse().get(model.type());
+    }
+
     public static void tryMapStack(ItemStack stack, ResourceLocation modelLocation, ProblemReporter reporter, PackContext context) {
-        ItemModel model = Minecraft.getInstance().getModelManager().getItemModel(modelLocation);
-        mapItem(model, stack, reporter.forChild(() -> "client item definition " + modelLocation + " "), base -> new GeyserSingleDefinition(base, Optional.of(modelLocation)), context);
+        getModels().rainbow$getClientItem(modelLocation).map(ClientItem::model)
+                .ifPresentOrElse(model -> mapItem(model, stack, reporter.forChild(() -> "client item definition " + modelLocation + " "), base -> new GeyserSingleDefinition(base, Optional.of(modelLocation)), context),
+                        () -> reporter.report(() -> "missing client item definition " + modelLocation));
     }
 
     public static void tryMapStack(ItemStack stack, int customModelData, ProblemReporter reporter, PackContext context) {
-        ItemModel vanillaModel = Minecraft.getInstance().getModelManager().getItemModel(stack.get(DataComponents.ITEM_MODEL));
-        reporter = reporter.forChild(() -> "item model " + vanillaModel + " with custom model data " + customModelData + " ");
-        if (vanillaModel instanceof RangeSelectItemModel rangeModel) {
-            RangeSelectItemModelAccessor accessor = (RangeSelectItemModelAccessor) rangeModel;
-            RangeSelectItemModelProperty property = accessor.getProperty();
+        ItemModel.Unbaked vanillaModel = getModels().rainbow$getClientItem(stack.get(DataComponents.ITEM_MODEL)).map(ClientItem::model).orElseThrow();
+        ProblemReporter childReporter = reporter.forChild(() -> "item model " + vanillaModel + " with custom model data " + customModelData + " ");
+        if (vanillaModel instanceof RangeSelectItemModel.Unbaked(RangeSelectItemModelProperty property, float scale, List<RangeSelectItemModel.Entry> entries, Optional<ItemModel.Unbaked> fallback)) {
             // WHY, Mojang?
             if (property instanceof net.minecraft.client.renderer.item.properties.numeric.CustomModelDataProperty(int index)) {
                 if (index == 0) {
-                    float scaledCustomModelData = customModelData * accessor.getScale();
+                    float scaledCustomModelData = customModelData * scale;
 
-                    int modelIndex = RangeSelectItemModelAccessor.invokeLastIndexLessOrEqual(accessor.getThresholds(), scaledCustomModelData);
-                    ItemModel model = modelIndex == -1 ? accessor.getFallback() : accessor.getModels()[modelIndex];
-                    mapItem(model, stack, reporter, base -> new GeyserLegacyDefinition(base, customModelData), context);
+                    float[] thresholds = ArrayUtils.toPrimitive(entries.stream()
+                            .map(RangeSelectItemModel.Entry::threshold)
+                            .toArray(Float[]::new));
+                    int modelIndex = RangeSelectItemModelAccessor.invokeLastIndexLessOrEqual(thresholds, scaledCustomModelData);
+                    Optional<ItemModel.Unbaked> model = modelIndex == -1 ? fallback : Optional.of(entries.get(modelIndex).model());
+                    model.ifPresentOrElse(present -> mapItem(present, stack, childReporter, base -> new GeyserLegacyDefinition(base, customModelData), context),
+                            () -> childReporter.report(() -> "custom model data index lookup returned -1, and no fallback is present"));
                 } else {
-                    reporter.report(() -> "range_dispatch custom model data property index is not zero, unable to apply custom model data");
+                    childReporter.report(() -> "range_dispatch custom model data property index is not zero, unable to apply custom model data");
                 }
-            } else {
-                reporter.report(() -> "range_dispatch model property is not custom model data, unable to apply custom model data");
+                return;
             }
-        } else {
-            reporter.report(() -> "item model is not range_dispatch, unable to apply custom model data");
         }
+        childReporter.report(() -> "item model is not range_dispatch, unable to apply custom model data");
     }
 
-    public static void mapItem(ItemModel model, ItemStack stack, ProblemReporter reporter,
+    public static void mapItem(ItemModel.Unbaked model, ItemStack stack, ProblemReporter reporter,
                                Function<GeyserBaseDefinition, GeyserItemDefinition> definitionCreator, PackContext packContext) {
         mapItem(model, new MappingContext(List.of(), stack, reporter, definitionCreator, packContext));
     }
 
-    private static void mapItem(ItemModel model, MappingContext context) {
+    private static void mapItem(ItemModel.Unbaked model, MappingContext context) {
         switch (model) {
-            case BlockModelWrapper modelWrapper -> {
-                ResourceLocation itemModelLocation = ((BlockModelWrapperLocationAccessor) modelWrapper).rainbow$getModelOrigin();
-
-                ((ResolvedModelAccessor) Minecraft.getInstance().getModelManager()).rainbow$getResolvedModel(itemModelLocation)
-                        .ifPresentOrElse(itemModel -> {
-                            ResolvedModel parentModel = itemModel.parent();
-                            // debugName() returns the resource location of the model as a string
-                            boolean handheld = parentModel != null && HANDHELD_MODELS.contains(ResourceLocation.parse(parentModel.debugName()));
-
-                            ResourceLocation bedrockIdentifier;
-                            if (itemModelLocation.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
-                                bedrockIdentifier = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModelLocation.getPath());
-                            } else {
-                                bedrockIdentifier = itemModelLocation;
-                            }
-
-                            Material layer0Texture = itemModel.getTopTextureSlots().getMaterial("layer0");
-                            Optional<ResourceLocation> texture;
-                            Optional<ResolvedModel> customGeometry;
-                            if (layer0Texture != null) {
-                                texture = Optional.of(layer0Texture.texture());
-                                customGeometry = Optional.empty();
-                            } else {
-                                // We can't stitch multiple textures together yet, so we just grab the first one we see
-                                // This will only work properly for models with just one texture
-                                texture = ((TextureSlotsAccessor) itemModel.getTopTextureSlots()).getResolvedValues().values().stream()
-                                        .map(Material::texture)
-                                        .findAny();
-                                // Unknown texture (doesn't use layer0), so we immediately assume the geometry is custom
-                                // This check should probably be done differently
-                                customGeometry = Optional.of(itemModel);
-                            }
-
-                            texture.ifPresentOrElse(itemTexture -> {
-                                // Not a problem, but just report to get the model printed in the report file
-                                context.reporter.report(() -> "creating mapping for block model " + itemModelLocation);
-                                context.create(bedrockIdentifier, itemTexture, handheld, customGeometry);
-                            }, () -> context.reporter.report(() -> "not mapping block model " + itemModelLocation + " because it has no texture"));
-                        }, () -> context.reporter.report(() -> "missing block model " + itemModelLocation));
-            }
-            case ConditionalItemModel conditional -> mapConditionalModel(conditional, context.child("condition model "));
-            case SelectItemModel<?> select -> mapSelectModel(select, context.child("select model "));
-            default -> context.reporter.report(() -> "unsupported item model " + model.getClass()); // TODO intermediary stuff
+            case BlockModelWrapper.Unbaked modelWrapper -> mapBlockModelWrapper(modelWrapper, context.child("plain model " + modelWrapper.model()));
+            case ConditionalItemModel.Unbaked conditional -> mapConditionalModel(conditional, context.child("condition model "));
+            case SelectItemModel.Unbaked select -> mapSelectModel(select, context.child("select model "));
+            default -> context.reporter.report(() -> "unsupported item model " + getModelId(model));
         }
     }
 
-    private static void mapConditionalModel(ConditionalItemModel model, MappingContext context) {
-        ItemModelPropertyTest property = ((ConditionalItemModelAccessor) model).getProperty();
+    private static void mapBlockModelWrapper(BlockModelWrapper.Unbaked model, MappingContext context) {
+        ResourceLocation itemModelLocation = model.model();
+
+        getModels().rainbow$getResolvedModel(itemModelLocation)
+                .ifPresentOrElse(itemModel -> {
+                    ResolvedModel parentModel = itemModel.parent();
+                    // debugName() returns the resource location of the model as a string
+                    boolean handheld = parentModel != null && HANDHELD_MODELS.contains(ResourceLocation.parse(parentModel.debugName()));
+
+                    ResourceLocation bedrockIdentifier;
+                    if (itemModelLocation.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
+                        bedrockIdentifier = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModelLocation.getPath());
+                    } else {
+                        bedrockIdentifier = itemModelLocation;
+                    }
+
+                    Material layer0Texture = itemModel.getTopTextureSlots().getMaterial("layer0");
+                    Optional<ResourceLocation> texture;
+                    Optional<ResolvedModel> customGeometry;
+                    if (layer0Texture != null) {
+                        texture = Optional.of(layer0Texture.texture());
+                        customGeometry = Optional.empty();
+                    } else {
+                        // We can't stitch multiple textures together yet, so we just grab the first one we see
+                        // This will only work properly for models with just one texture
+                        texture = ((TextureSlotsAccessor) itemModel.getTopTextureSlots()).getResolvedValues().values().stream()
+                                .map(Material::texture)
+                                .findAny();
+                        // Unknown texture (doesn't use layer0), so we immediately assume the geometry is custom
+                        // This check should probably be done differently
+                        customGeometry = Optional.of(itemModel);
+                    }
+
+                    texture.ifPresentOrElse(itemTexture -> {
+                        // Not a problem, but just report to get the model printed in the report file
+                        context.reporter.report(() -> "creating mapping for block model " + itemModelLocation);
+                        context.create(bedrockIdentifier, itemTexture, handheld, customGeometry);
+                    }, () -> context.reporter.report(() -> "not mapping block model " + itemModelLocation + " because it has no texture"));
+                }, () -> context.reporter.report(() -> "missing block model " + itemModelLocation));
+    }
+
+    private static void mapConditionalModel(ConditionalItemModel.Unbaked model, MappingContext context) {
+        ItemModelPropertyTest property = model.property();
         GeyserConditionPredicate.Property predicateProperty = switch (property) {
             case Broken ignored -> GeyserConditionPredicate.BROKEN;
             case Damaged ignored -> GeyserConditionPredicate.DAMAGED;
@@ -163,8 +173,8 @@ public class BedrockItemMapper {
             case FishingRodCast ignored -> GeyserConditionPredicate.FISHING_ROD_CAST;
             default -> null;
         };
-        ItemModel onTrue = ((ConditionalItemModelAccessor) model).getOnTrue();
-        ItemModel onFalse = ((ConditionalItemModelAccessor) model).getOnFalse();
+        ItemModel.Unbaked onTrue = model.onTrue();
+        ItemModel.Unbaked onFalse = model.onFalse();
 
         if (predicateProperty == null) {
             context.reporter.report(() -> "unsupported conditional model property " + property + ", only mapping on_false");
@@ -177,9 +187,9 @@ public class BedrockItemMapper {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void mapSelectModel(SelectItemModel<T> model, MappingContext context) {
-        SelectItemModelProperty<T> property = ((SelectItemModelAccessor<T>) model).getProperty();
-        Function<T, GeyserMatchPredicate.MatchPredicateData> dataConstructor = switch (property) {
+    private static void mapSelectModel(SelectItemModel.Unbaked model, MappingContext context) {
+        SelectItemModel.UnbakedSwitch<?, ?> unbakedSwitch = model.unbakedSwitch();
+        Function<Object, GeyserMatchPredicate.MatchPredicateData> dataConstructor = switch (unbakedSwitch.property()) {
             case Charge ignored -> chargeType -> new GeyserMatchPredicate.ChargeType((CrossbowItem.ChargeType) chargeType);
             case TrimMaterialProperty ignored -> material -> new GeyserMatchPredicate.TrimMaterialData((ResourceKey<TrimMaterial>) material);
             case ContextDimension ignored -> dimension -> new GeyserMatchPredicate.ContextDimension((ResourceKey<Level>) dimension);
@@ -188,24 +198,29 @@ public class BedrockItemMapper {
             default -> null;
         };
 
-        Object2ObjectMap<T, ItemModel> cases = ((SelectItemModelCasesAccessor<T>) model).rainbow$getCases();
+        List<? extends SelectItemModel.SwitchCase<?>> cases = unbakedSwitch.cases();
 
         if (dataConstructor == null) {
-            if (property instanceof DisplayContext) {
-                ItemModel gui = cases.get(ItemDisplayContext.GUI);
-                if (gui != null) {
-                    context.reporter.report(() -> "unsupported select model property display_context, only mapping \"gui\" case");
-                    mapItem(gui, context.child("select GUI display_context case (unsupported property) "));
-                    return;
+            if (unbakedSwitch.property() instanceof DisplayContext) {
+                context.reporter.report(() -> "unsupported select model property display_context, only mapping \"gui\" case, if it exists");
+                for (SelectItemModel.SwitchCase<?> switchCase : cases) {
+                    if (switchCase.values().contains(ItemDisplayContext.GUI)) {
+                        mapItem(switchCase.model(), context.child("select GUI display_context case (unsupported property) "));
+                        return;
+                    }
                 }
             }
-            context.reporter.report(() -> "unsupported select model property " + property + ", only mapping fallback");
-            mapItem(cases.defaultReturnValue(), context.child("select fallback case (unsupported property) "));
+            context.reporter.report(() -> "unsupported select model property " + unbakedSwitch.property() + ", only mapping fallback, if present");
+            model.fallback().ifPresent(fallback -> mapItem(fallback, context.child("select fallback case (unsupported property) ")));
             return;
         }
 
-        cases.forEach((key, value) -> mapItem(value, context.with(new GeyserMatchPredicate(dataConstructor.apply(key)), "select case " + key + " ")));
-        mapItem(cases.defaultReturnValue(), context.child("select fallback case "));
+        cases.forEach(switchCase -> {
+            switchCase.values().forEach(value -> {
+                mapItem(switchCase.model(), context.with(new GeyserMatchPredicate(dataConstructor.apply(value)), "select case " + value + " "));
+            });
+        });
+        model.fallback().ifPresent(fallback -> mapItem(fallback, context.child("select fallback case ")));
     }
 
     private record MappingContext(List<GeyserPredicate> predicateStack, ItemStack stack, ProblemReporter reporter,
