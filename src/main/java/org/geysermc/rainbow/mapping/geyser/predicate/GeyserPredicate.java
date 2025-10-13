@@ -17,7 +17,8 @@ public interface GeyserPredicate {
 
     enum Type implements StringRepresentable {
         CONDITION("condition", GeyserConditionPredicate.CODEC),
-        MATCH("match", GeyserMatchPredicate.CODEC);
+        MATCH("match", GeyserMatchPredicate.CODEC),
+        RANGE_DISPATCH("range_dispatch", GeyserRangeDispatchPredicate.CODEC);
 
         public static final Codec<Type> CODEC = StringRepresentable.fromEnum(Type::values);
 

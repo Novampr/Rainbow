@@ -3,6 +3,8 @@ package org.geysermc.rainbow.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.item.ClientItem;
+import net.minecraft.client.resources.model.ClientItemInfoLoader;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +23,8 @@ import java.util.concurrent.CompletableFuture;
 public abstract class ModelManagerMixin implements PreparableReloadListener, AutoCloseable, ResolvedModelAccessor {
     @Unique
     private Map<ResourceLocation, ResolvedModel> unbakedResolvedModels;
+    @Unique
+    private Map<ResourceLocation, ClientItem> clientItems;
 
     @WrapOperation(method = "method_65753", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;join()Ljava/lang/Object;", ordinal = 1))
     private static Object setResolvedModels(CompletableFuture<?> instance, Operation<Object> original) {
@@ -35,8 +39,21 @@ public abstract class ModelManagerMixin implements PreparableReloadListener, Aut
         return resolved;
     }
 
+    @WrapOperation(method = "method_65753", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ClientItemInfoLoader$LoadedClientInfos;contents()Ljava/util/Map;"))
+    private static Map<ResourceLocation, ClientItem> setClientItems(ClientItemInfoLoader.LoadedClientInfos instance, Operation<Map<ResourceLocation, ClientItem>> original) {
+        // Same note as above for not using "this"
+        ModelManagerMixin thiz = ((ModelManagerMixin) (Object) Minecraft.getInstance().getModelManager());
+        thiz.clientItems = original.call(instance);
+        return thiz.clientItems;
+    }
+
     @Override
     public Optional<ResolvedModel> rainbow$getResolvedModel(ResourceLocation location) {
         return unbakedResolvedModels == null ? Optional.empty() : Optional.ofNullable(unbakedResolvedModels.get(location));
+    }
+
+    @Override
+    public Optional<ClientItem> rainbow$getClientItem(ResourceLocation location) {
+        return clientItems == null ? Optional.empty() : Optional.ofNullable(clientItems.get(location));
     }
 }
