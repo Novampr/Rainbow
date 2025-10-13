@@ -14,6 +14,9 @@ import net.minecraft.client.renderer.item.properties.conditional.Damaged;
 import net.minecraft.client.renderer.item.properties.conditional.FishingRodCast;
 import net.minecraft.client.renderer.item.properties.conditional.HasComponent;
 import net.minecraft.client.renderer.item.properties.conditional.ItemModelPropertyTest;
+import net.minecraft.client.renderer.item.properties.numeric.BundleFullness;
+import net.minecraft.client.renderer.item.properties.numeric.Count;
+import net.minecraft.client.renderer.item.properties.numeric.Damage;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.client.renderer.item.properties.select.Charge;
 import net.minecraft.client.renderer.item.properties.select.ContextDimension;
@@ -49,6 +52,7 @@ import org.geysermc.rainbow.mapping.geyser.GeyserSingleDefinition;
 import org.geysermc.rainbow.mapping.geyser.predicate.GeyserConditionPredicate;
 import org.geysermc.rainbow.mapping.geyser.predicate.GeyserMatchPredicate;
 import org.geysermc.rainbow.mapping.geyser.predicate.GeyserPredicate;
+import org.geysermc.rainbow.mapping.geyser.predicate.GeyserRangeDispatchPredicate;
 import org.geysermc.rainbow.mixin.LateBoundIdMapperAccessor;
 import org.geysermc.rainbow.mixin.RangeSelectItemModelAccessor;
 import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
@@ -188,7 +192,25 @@ public class BedrockItemMapper {
     }
 
     private static void mapRangeSelectModel(RangeSelectItemModel.Unbaked model, MappingContext context) {
+        RangeSelectItemModelProperty property = model.property();
+        GeyserRangeDispatchPredicate.Property predicateProperty = switch (property) {
+            case BundleFullness ignored -> GeyserRangeDispatchPredicate.BUNDLE_FULLNESS;
+            case Count count -> new GeyserRangeDispatchPredicate.Count(count.normalize());
+            // Mojang, why? :(
+            case net.minecraft.client.renderer.item.properties.numeric.CustomModelDataProperty customModelData -> new GeyserRangeDispatchPredicate.CustomModelData(customModelData.index());
+            case Damage damage -> new GeyserRangeDispatchPredicate.Damage(damage.normalize());
+            default -> null;
+        };
 
+        if (predicateProperty == null) {
+            context.reporter.report(() -> "unsupported range dispatch model property " + property + ", only mapping fallback, if it is present");
+        } else {
+            for (RangeSelectItemModel.Entry entry : model.entries()) {
+                mapItem(entry.model(), context.with(new GeyserRangeDispatchPredicate(predicateProperty, entry.threshold(), model.scale()), "threshold " + entry.threshold()));
+            }
+        }
+
+        model.fallback().ifPresent(fallback -> mapItem(fallback, context.child("range dispatch fallback")));
     }
 
     @SuppressWarnings("unchecked")

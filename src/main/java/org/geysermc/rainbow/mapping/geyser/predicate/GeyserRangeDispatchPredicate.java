@@ -10,20 +10,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
-public record GeyserRangeDispatchPredicate(Property property, float threshold, float scale, boolean normalise) implements GeyserPredicate {
+public record GeyserRangeDispatchPredicate(Property property, float threshold, float scale) implements GeyserPredicate {
 
     public static final MapCodec<GeyserRangeDispatchPredicate> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     Property.CODEC.forGetter(GeyserRangeDispatchPredicate::property),
                     Codec.FLOAT.fieldOf("threshold").forGetter(GeyserRangeDispatchPredicate::threshold),
-                    Codec.FLOAT.fieldOf("scale").forGetter(GeyserRangeDispatchPredicate::scale),
-                    Codec.BOOL.fieldOf("normalize").forGetter(GeyserRangeDispatchPredicate::normalise)
+                    Codec.FLOAT.fieldOf("scale").forGetter(GeyserRangeDispatchPredicate::scale)
             ).apply(instance, GeyserRangeDispatchPredicate::new)
     );
 
     public static final Property BUNDLE_FULLNESS = unit(Property.Type.BUNDLE_FULLNESS);
-    public static final Property DAMAGE = unit(Property.Type.DAMAGE);
-    public static final Property COUNT = unit(Property.Type.COUNT);
 
     @Override
     public Type type() {
@@ -38,8 +35,8 @@ public record GeyserRangeDispatchPredicate(Property property, float threshold, f
 
         enum Type implements StringRepresentable {
             BUNDLE_FULLNESS("bundle_fullness", () -> MapCodec.unit(GeyserRangeDispatchPredicate.BUNDLE_FULLNESS)),
-            DAMAGE("damage", () -> MapCodec.unit(GeyserRangeDispatchPredicate.DAMAGE)),
-            COUNT("count", () -> MapCodec.unit(GeyserRangeDispatchPredicate.COUNT)),
+            DAMAGE("damage", () -> Damage.CODEC),
+            COUNT("count", () -> Count.CODEC),
             CUSTOM_MODEL_DATA("custom_model_data", () -> CustomModelData.CODEC);
 
             public static final Codec<Type> CODEC = StringRepresentable.fromEnum(Type::values);
@@ -63,12 +60,26 @@ public record GeyserRangeDispatchPredicate(Property property, float threshold, f
         }
     }
 
+    public record Damage(boolean normalize) implements Property {
+        public static final MapCodec<Damage> CODEC = Codec.BOOL.fieldOf("normalize").xmap(Damage::new, Damage::normalize);
+
+        @Override
+        public Type type() {
+            return Type.DAMAGE;
+        }
+    }
+
+    public record Count(boolean normalize) implements Property {
+        public static final MapCodec<Count> CODEC = Codec.BOOL.fieldOf("normalize").xmap(Count::new, Count::normalize);
+
+        @Override
+        public Type type() {
+            return Type.COUNT;
+        }
+    }
+
     public record CustomModelData(int index) implements Property {
-        public static final MapCodec<CustomModelData> CODEC = RecordCodecBuilder.mapCodec(instance ->
-                instance.group(
-                        ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("index", 0).forGetter(CustomModelData::index)
-                ).apply(instance, CustomModelData::new)
-        );
+        public static final MapCodec<CustomModelData> CODEC = ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("index", 0).xmap(CustomModelData::new, CustomModelData::index);
 
         @Override
         public Type type() {

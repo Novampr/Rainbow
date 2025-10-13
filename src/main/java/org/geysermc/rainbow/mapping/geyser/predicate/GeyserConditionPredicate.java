@@ -64,11 +64,7 @@ public record GeyserConditionPredicate(Property property, boolean expected) impl
     }
 
     public record CustomModelData(int index) implements Property {
-        public static final MapCodec<CustomModelData> CODEC = RecordCodecBuilder.mapCodec(instance ->
-                instance.group(
-                        ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("index", 0).forGetter(CustomModelData::index)
-                ).apply(instance, CustomModelData::new)
-        );
+        public static final MapCodec<CustomModelData> CODEC = ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("index", 0).xmap(CustomModelData::new, CustomModelData::index);
 
         @Override
         public Type type() {
@@ -77,11 +73,7 @@ public record GeyserConditionPredicate(Property property, boolean expected) impl
     }
 
     public record HasComponent(DataComponentType<?> component) implements Property {
-        public static final MapCodec<HasComponent> CODEC = RecordCodecBuilder.mapCodec(instance ->
-                instance.group(
-                        DataComponentType.CODEC.fieldOf("component").forGetter(HasComponent::component)
-                ).apply(instance, HasComponent::new)
-        );
+        public static final MapCodec<HasComponent> CODEC = DataComponentType.CODEC.fieldOf("component").xmap(HasComponent::new, HasComponent::component);
 
         @Override
         public Type type() {
