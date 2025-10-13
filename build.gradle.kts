@@ -1,18 +1,11 @@
 plugins {
-    id("fabric-loom") version "1.11-SNAPSHOT"
+    alias(libs.plugins.fabric.loom)
 }
 
-val minecraftVersion = properties["minecraft_version"]!! as String
-val parchmentVersion = properties["parchment_version"]!! as String
-val loaderVersion = properties["loader_version"]!! as String
+version = properties["mod_version"]!! as String
+group = properties["maven_group"]!! as String
 
-val modVersion = properties["mod_version"]!! as String
-val supportedVersions = properties["supported_versions"]!! as String
 val archivesBaseName = properties["archives_base_name"]!! as String
-
-val fabricVersion = properties["fabric_version"]!! as String
-val packConverterVersion = properties["pack_converter_version"]!! as String
-
 val targetJavaVersion = 21
 
 repositories {
@@ -33,34 +26,36 @@ repositories {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:${minecraftVersion}")
+    minecraft(libs.minecraft)
     mappings(loom.layered {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchmentVersion}@zip")
+        parchment(libs.parchment)
     })
 
-    modImplementation("net.fabricmc:fabric-loader:${loaderVersion}")
+    modImplementation(libs.fabric.loader)
+    modImplementation(libs.fabric.api)
 
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${fabricVersion}")
-
-    include(implementation("com.github.GeyserMC.unnamed-creative:creative-api:817fa982c4")!!)
-    include(implementation("com.github.GeyserMC.unnamed-creative:creative-serializer-minecraft:817fa982c4")!!)
-    include(implementation("org.geysermc.pack:converter:${packConverterVersion}")!!)
+    implementation(libs.creative.api)
+    implementation(libs.creative.serializer.minecraft)
+    implementation(libs.packconverter)
+    include(libs.creative.api)
+    include(libs.creative.serializer.minecraft)
+    include(libs.packconverter)
 }
 
 tasks {
     processResources {
-        inputs.property("version", modVersion)
-        inputs.property("supported_versions", supportedVersions)
-        inputs.property("loader_version", loaderVersion)
+        inputs.property("version", version)
+        inputs.property("supported_versions", libs.versions.minecraft.supported.get())
+        inputs.property("loader_version", libs.versions.fabric.loader.get())
         filteringCharset = "UTF-8"
 
         filesMatching("fabric.mod.json") {
             expand(
                 mapOf(
-                    "version" to modVersion,
-                    "supported_versions" to supportedVersions,
-                    "loader_version" to loaderVersion
+                    "version" to version,
+                    "supported_versions" to libs.versions.minecraft.supported.get(),
+                    "loader_version" to libs.versions.fabric.loader.get()
                 )
             )
         }

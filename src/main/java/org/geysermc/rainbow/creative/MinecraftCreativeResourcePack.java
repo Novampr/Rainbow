@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class MinecraftCreativeResourcePack extends CachingStreamResourceContainer implements ImmutableResourcePack {
+    // Matches a path in 3 groups: the first directory, the rest of the path, and the file extension (e.g. .json)
     private static final Pattern PATH_SANITIZE_REGEX = Pattern.compile("(^\\w+/)(.*)(\\.\\w+$)");
 
     private final ResourceManager resourceManager;
