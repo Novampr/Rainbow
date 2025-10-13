@@ -117,6 +117,7 @@ public class BedrockItemMapper {
         switch (model) {
             case BlockModelWrapper.Unbaked modelWrapper -> mapBlockModelWrapper(modelWrapper, context.child("plain model " + modelWrapper.model()));
             case ConditionalItemModel.Unbaked conditional -> mapConditionalModel(conditional, context.child("condition model "));
+            case RangeSelectItemModel.Unbaked rangeSelect -> mapRangeSelectModel(rangeSelect, context.child("range select model "));
             case SelectItemModel.Unbaked select -> mapSelectModel(select, context.child("select model "));
             default -> context.reporter.report(() -> "unsupported item model " + getModelId(model));
         }
@@ -184,6 +185,10 @@ public class BedrockItemMapper {
 
         mapItem(onTrue, context.with(new GeyserConditionPredicate(predicateProperty, true), "condition on true "));
         mapItem(onFalse, context.with(new GeyserConditionPredicate(predicateProperty, false), "condition on false "));
+    }
+
+    private static void mapRangeSelectModel(RangeSelectItemModel.Unbaked model, MappingContext context) {
+
     }
 
     @SuppressWarnings("unchecked")

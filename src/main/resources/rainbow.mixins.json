@@ -3,12 +3,11 @@
   "minVersion": "0.8",
   "package": "org.geysermc.rainbow.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [
-    "LateBoundIdMapperAccessor"
-  ],
+  "mixins": [],
   "client": [
     "EntityRenderDispatcherAccessor",
     "GuiItemRenderStateMixin",
+    "LateBoundIdMapperAccessor",
     "ModelManagerMixin",
     "PictureInPictureRendererAccessor",
     "PictureInPictureRendererMixin",
