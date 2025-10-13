@@ -87,4 +87,4 @@ jobs:
           discordWebhook: ${{ secrets.DISCORD_WEBHOOK }}
           status: ${{ job.status }}
           body: ${{ steps.metadata.outputs.body }}
-          includeDownloads: true
+          includeDownloads: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
