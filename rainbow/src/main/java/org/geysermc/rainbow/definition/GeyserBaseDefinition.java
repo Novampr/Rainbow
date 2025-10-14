@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mapping.geyser;
+package org.geysermc.rainbow.definition;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -8,7 +8,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import org.geysermc.rainbow.Rainbow;
-import org.geysermc.rainbow.mapping.geyser.predicate.GeyserPredicate;
+import org.geysermc.rainbow.definition.predicate.GeyserPredicate;
 
 import java.util.List;
 import java.util.Optional;

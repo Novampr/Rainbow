@@ -20,7 +20,7 @@ import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
 import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mapping.geometry.NoopGeometryRenderer;
-import org.geysermc.rainbow.mapping.geyser.GeyserMappings;
+import org.geysermc.rainbow.definition.GeyserMappings;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileOutputStream;

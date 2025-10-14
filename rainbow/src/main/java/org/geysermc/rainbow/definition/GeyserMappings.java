@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mapping.geyser;
+package org.geysermc.rainbow.definition;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;

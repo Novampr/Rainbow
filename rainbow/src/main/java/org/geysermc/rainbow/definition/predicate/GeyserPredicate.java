@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mapping.geyser.predicate;
+package org.geysermc.rainbow.definition.predicate;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;

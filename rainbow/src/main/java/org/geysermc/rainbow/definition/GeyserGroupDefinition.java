@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mapping.geyser;
+package org.geysermc.rainbow.definition;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
