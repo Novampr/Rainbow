@@ -9,15 +9,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.EquipmentSlot;
-import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
 import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.pack.BedrockTextures;
 import org.geysermc.rainbow.pack.BedrockVersion;
 import org.geysermc.rainbow.pack.geometry.BedrockGeometry;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -25,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo info) {
@@ -35,9 +35,9 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
             ).apply(instance, BedrockAttachable::new)
     );
 
-    public void save(Path attachablesDirectory) throws IOException {
+    public CompletableFuture<?> save(PackSerializer serializer, Path attachablesDirectory) {
         // Get a safe attachable path by using Geyser's way of getting icons
-        CodecUtil.trySaveJson(CODEC, this, attachablesDirectory.resolve(Rainbow.fileSafeResourceLocation(info.identifier) + ".json"));
+        return serializer.saveJson(CODEC, this, attachablesDirectory.resolve(Rainbow.fileSafeResourceLocation(info.identifier)));
     }
 
     public static Builder builder(ResourceLocation identifier) {

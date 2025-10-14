@@ -1,44 +1,42 @@
 package org.geysermc.rainbow.pack;
 
-import com.mojang.serialization.JsonOps;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
-import org.apache.commons.io.IOUtils;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
 import org.geysermc.rainbow.mapping.PackContext;
+import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.mapping.geometry.GeometryRenderer;
 import org.geysermc.rainbow.mapping.geometry.NoopGeometryRenderer;
 import org.geysermc.rainbow.definition.GeyserMappings;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 
 public class BedrockPack {
     private final String name;
     private final PackPaths paths;
+    private final PackSerializer serializer;
 
     private final BedrockTextures.Builder itemTextures = BedrockTextures.builder();
     private final Set<BedrockItem> bedrockItems = new HashSet<>();
@@ -50,11 +48,12 @@ public class BedrockPack {
     private final PackManifest manifest;
     private final ProblemReporter.Collector reporter;
 
-    public BedrockPack(String name, PackPaths paths, AssetResolver assetResolver,
+    public BedrockPack(String name, PackPaths paths, PackSerializer serializer, AssetResolver assetResolver,
                        GeometryRenderer geometryRenderer, ProblemReporter.Collector reporter,
                        boolean reportSuccesses) {
         this.name = name;
         this.paths = paths;
+        this.serializer = serializer;
 
         // Not reading existing item mappings/texture atlas for now since that doesn't work all that well yet
         this.context = new PackContext(new GeyserMappings(), paths, item -> {
@@ -121,50 +120,29 @@ public class BedrockPack {
         return map(stack);
     }
 
-    public boolean save() {
-        boolean success = true;
+    public CompletableFuture<?> save() {
+        List<CompletableFuture<?>> futures = new ArrayList<>();
 
-        try {
-            CodecUtil.trySaveJson(GeyserMappings.CODEC, context.mappings(), paths.mappings(), RegistryOps.create(JsonOps.INSTANCE, context.assetResolver().registries()));
-            CodecUtil.trySaveJson(PackManifest.CODEC, manifest, paths.manifest());
-            CodecUtil.trySaveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), paths.itemAtlas());
-        } catch (IOException | NullPointerException exception) {
-            reporter.forChild(() -> "saving Geyser mappings, pack manifest, and texture atlas ").report(() -> "failed to save to pack: " + exception);
-            success = false;
-        }
+        futures.add(serializer.saveJson(GeyserMappings.CODEC, context.mappings(), paths.mappings()));
+        futures.add(serializer.saveJson(PackManifest.CODEC, manifest, paths.manifest()));
+        futures.add(serializer.saveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), paths.itemAtlas()));
         for (BedrockItem item : bedrockItems) {
-            try {
-                item.save(paths.attachables(), paths.geometry(), paths.animation());
-            } catch (IOException exception) {
-                reporter.forChild(() -> "files for bedrock item " + item.identifier() + " ").report(() -> "failed to save to pack: " + exception);
-                success = false;
-            }
+            futures.addAll(item.save(serializer, paths.attachables(), paths.geometry(), paths.animation()));
         }
 
         for (ResourceLocation texture : texturesToExport) {
-            texture = texture.withPath(path -> "textures/" + path + ".png");
-            try (InputStream inputTexture = context.assetResolver().getTexture(texture)) {
-                Path texturePath = paths.packRoot().resolve(texture.getPath());
-                CodecUtil.ensureDirectoryExists(texturePath.getParent());
-                try (OutputStream outputTexture = new FileOutputStream(texturePath.toFile())) {
-                    IOUtils.copy(inputTexture, outputTexture);
-                }
-            } catch (IOException exception) {
-                ResourceLocation finalTexture = texture;
-                reporter.forChild(() -> "texture " + finalTexture + " ").report(() -> "failed to save to pack: " + exception);
-                success = false;
-            }
+            futures.add(serializer.saveTexture(texture, paths.packRoot().resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png")));
         }
 
         if (paths.zipOutput().isPresent()) {
             try {
                 CodecUtil.tryZipDirectory(paths.packRoot(), paths.zipOutput().get());
             } catch (IOException exception) {
-                success = false;
+                // TODO log
             }
         }
 
-        return success;
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 
     public int getMappings() {
@@ -192,8 +170,8 @@ public class BedrockPack {
                 List.of(new PackManifest.Module(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0))));
     }
 
-    public static Builder builder(String name, Path mappingsPath, Path packRootPath, AssetResolver assetResolver) {
-        return new Builder(name, mappingsPath, packRootPath, assetResolver);
+    public static Builder builder(String name, Path mappingsPath, Path packRootPath, PackSerializer packSerializer, AssetResolver assetResolver) {
+        return new Builder(name, mappingsPath, packRootPath, packSerializer, assetResolver);
     }
 
     public static class Builder {
@@ -201,12 +179,13 @@ public class BedrockPack {
         private static final Path GEOMETRY_DIRECTORY = Path.of("models/entity");
         private static final Path ANIMATION_DIRECTORY = Path.of("animations");
 
-        private static final Path MANIFEST_FILE = Path.of("manifest.json");
-        private static final Path ITEM_ATLAS_FILE = Path.of("textures/item_texture.json");
+        private static final Path MANIFEST_FILE = Path.of("manifest");
+        private static final Path ITEM_ATLAS_FILE = Path.of("textures/item_texture");
 
         private final String name;
         private final Path mappingsPath;
         private final Path packRootPath;
+        private final PackSerializer packSerializer;
         private final AssetResolver assetResolver;
         private UnaryOperator<Path> attachablesPath = resolve(ATTACHABLES_DIRECTORY);
         private UnaryOperator<Path> geometryPath = resolve(GEOMETRY_DIRECTORY);
@@ -218,11 +197,12 @@ public class BedrockPack {
         private ProblemReporter.Collector reporter;
         private boolean reportSuccesses = false;
 
-        public Builder(String name, Path mappingsPath, Path packRootPath, AssetResolver assetResolver) {
+        public Builder(String name, Path mappingsPath, Path packRootPath, PackSerializer packSerializer, AssetResolver assetResolver) {
             this.name = name;
             this.mappingsPath = mappingsPath;
             this.packRootPath = packRootPath;
             this.reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name + " ");
+            this.packSerializer = packSerializer;
             this.assetResolver = assetResolver;
         }
 
@@ -295,7 +275,7 @@ public class BedrockPack {
             PackPaths paths = new PackPaths(mappingsPath, packRootPath, attachablesPath.apply(packRootPath),
                     geometryPath.apply(packRootPath), animationPath.apply(packRootPath), manifestPath.apply(packRootPath),
                     itemAtlasPath.apply(packRootPath), Optional.ofNullable(packZipFile));
-            return new BedrockPack(name, paths, assetResolver, geometryRenderer, reporter, reportSuccesses);
+            return new BedrockPack(name, paths, packSerializer, assetResolver, geometryRenderer, reporter, reportSuccesses);
         }
 
         private static UnaryOperator<Path> resolve(Path child) {

@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public final class PackManager {
@@ -32,7 +33,7 @@ public final class PackManager {
 
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve(Rainbow.MOD_ID);
     private static final Path PACK_DIRECTORY = Path.of("pack");
-    private static final Path MAPPINGS_FILE = Path.of("geyser_mappings.json");
+    private static final Path MAPPINGS_FILE = Path.of("geyser_mappings");
     private static final Path PACK_ZIP_FILE = Path.of("pack.zip");
     private static final Path REPORT_FILE = Path.of("report.txt");
 
@@ -44,7 +45,8 @@ public final class PackManager {
         }
 
         Path packDirectory = createPackDirectory(name);
-        BedrockPack pack = BedrockPack.builder(name, packDirectory.resolve(MAPPINGS_FILE), packDirectory.resolve(PACK_DIRECTORY), new MinecraftAssetResolver(Minecraft.getInstance()))
+        BedrockPack pack = BedrockPack.builder(name, packDirectory.resolve(MAPPINGS_FILE), packDirectory.resolve(PACK_DIRECTORY),
+                        new MinecraftPackSerializer(Minecraft.getInstance()), new MinecraftAssetResolver(Minecraft.getInstance()))
                 .withPackZipFile(packDirectory.resolve(PACK_ZIP_FILE))
                 .withGeometryRenderer(MinecraftGeometryRenderer.INSTANCE)
                 .reportSuccesses()
@@ -64,17 +66,18 @@ public final class PackManager {
         return currentPack.map(pack -> EXPORT_DIRECTORY.resolve(pack.name()));
     }
 
-    public Optional<Boolean> finish() {
-        Optional<Boolean> success = currentPack.map(pack -> {
+    public boolean finish() {
+        currentPack.map(pack -> {
             try {
                 Files.writeString(getExportPath().orElseThrow().resolve(REPORT_FILE), createPackSummary(pack));
             } catch (IOException exception) {
                 // TODO log
             }
             return pack.save();
-        });
+        }).ifPresent(CompletableFuture::join);
+        boolean wasPresent = currentPack.isPresent();
         currentPack = Optional.empty();
-        return success;
+        return wasPresent;
     }
 
     private static String createPackSummary(BedrockPack pack) {

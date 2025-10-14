@@ -5,12 +5,12 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Direction;
 import org.geysermc.rainbow.CodecUtil;
+import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.pack.BedrockVersion;
 import org.joml.Vector2fc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinition> definitions) {
     public static final BedrockVersion FORMAT_VERSION = BedrockVersion.of(1, 21, 0);
@@ -31,8 +32,8 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
             ).apply(instance, BedrockGeometry::new)
     );
 
-    public void save(Path geometryDirectory) throws IOException {
-        CodecUtil.trySaveJson(CODEC, this, geometryDirectory.resolve(definitions.getFirst().info.identifier + ".geo.json"));
+    public CompletableFuture<?> save(PackSerializer serializer, Path geometryDirectory) {
+        return serializer.saveJson(CODEC, this, geometryDirectory.resolve(definitions.getFirst().info.identifier + ".geo"));
     }
 
     public static BedrockGeometry of(GeometryDefinition... definitions) {
