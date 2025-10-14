@@ -4,9 +4,11 @@ import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.minecraft.client.data.models.model.ModelInstance;
+import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.client.resources.model.ResolvedModel;
+import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.data.CachedOutput;
@@ -20,7 +22,9 @@ import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.pack.BedrockPack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +48,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         CompletableFuture<?> vanillaModels = super.run(output);
 
         BedrockPack pack = BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"),
-                new Serializer(output, registries, bedrockPackPathProvider), new ModelResolver(itemInfosMap)).build();
+                new Serializer(output, registries, bedrockPackPathProvider), new ModelResolver(itemInfosMap, models)).build();
 
         for (Item item : itemInfosMap.keySet()) {
             pack.map(getVanillaItem(item).builtInRegistryHolder(), getVanillaDataComponentPatch(item));
@@ -81,7 +85,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         public CompletableFuture<?> saveTexture(ResourceLocation texture, Path path) {
             return CompletableFuture.completedFuture(null);
         }
-        }
+    }
 
     private static class ModelResolver implements AssetResolver {
         private final Map<ResourceLocation, ClientItem> itemInfosMap;
@@ -97,7 +101,24 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
 
         @Override
         public Optional<ResolvedModel> getResolvedModel(ResourceLocation location) {
-            return Optional.ofNullable(models.get(location));
+            return Optional.ofNullable(models.get(location))
+                    .map(instance -> BlockModel.fromStream(new StringReader(instance.get().toString())))
+                    .map(model -> new ResolvedModel() {
+                        @Override
+                        public @NotNull UnbakedModel wrapped() {
+                            return model;
+                        }
+
+                        @Override
+                        public @Nullable ResolvedModel parent() {
+                            return null;
+                        }
+
+                        @Override
+                        public @NotNull String debugName() {
+                            return location.toString();
+                        }
+                    }); // Not perfect since we're not resolving parents, not sure how to manage that
         }
 
         @Override
