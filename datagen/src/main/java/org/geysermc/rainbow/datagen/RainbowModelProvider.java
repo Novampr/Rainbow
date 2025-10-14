@@ -81,6 +81,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         @Override
         public <T> CompletableFuture<?> saveJson(Codec<T> codec, T object, Path path) {
             ResourceLocation location = ResourceLocation.withDefaultNamespace(path.toString());
+            System.out.println("saving bedrock " + location);
             return DataProvider.saveStable(output, registries, codec, object, provider.json(location));
         }
 

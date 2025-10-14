@@ -8,3 +8,7 @@ dependencies {
     implementation(project(path = ":rainbow", configuration = "namedElements"))
     include(project(":rainbow"))
 }
+
+loom {
+    accessWidenerPath = file("src/main/resources/rainbow-datagen.accesswidener")
+}

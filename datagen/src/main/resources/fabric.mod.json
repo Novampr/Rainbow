@@ -14,7 +14,10 @@
   },
   "license": "MIT",
   "environment": "client",
-  "mixins": [],
+  "mixins": [
+    "rainbow-datagen.mixins.json"
+  ],
+  "accessWidener": "rainbow-datagen.accesswidener",
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",

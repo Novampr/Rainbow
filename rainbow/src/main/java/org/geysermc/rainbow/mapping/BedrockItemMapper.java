@@ -277,7 +277,7 @@ public class BedrockItemMapper {
             String safeIdentifier = base.textureName();
             String bone = "bone";
             ResourceLocation geometryTexture = texture;
-            Optional<BedrockGeometryContext> bedrockGeometry = customModel.map(model -> GeometryMapper.mapGeometry(safeIdentifier, bone, model, geometryTexture));
+            Optional<BedrockGeometryContext> bedrockGeometry = customModel.flatMap(model -> GeometryMapper.mapGeometry(safeIdentifier, bone, model, geometryTexture));
             Optional<BedrockAnimationContext> bedrockAnimation = customModel.map(model -> AnimationMapper.mapAnimation(safeIdentifier, bone, model.getTopTransforms()));
 
             boolean exportTexture = true;

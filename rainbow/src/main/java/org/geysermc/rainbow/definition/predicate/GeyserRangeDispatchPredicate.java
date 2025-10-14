@@ -24,7 +24,7 @@ public record GeyserRangeDispatchPredicate(Property property, float threshold, f
 
     @Override
     public Type type() {
-        return null;
+        return Type.RANGE_DISPATCH;
     }
 
     public interface Property {

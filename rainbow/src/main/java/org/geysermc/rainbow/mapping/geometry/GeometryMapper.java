@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.block.model.BlockElementFace;
 import net.minecraft.client.renderer.block.model.BlockElementRotation;
 import net.minecraft.client.renderer.block.model.SimpleUnbakedGeometry;
 import net.minecraft.client.resources.model.ResolvedModel;
+import net.minecraft.client.resources.model.UnbakedGeometry;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import org.geysermc.rainbow.pack.geometry.BedrockGeometry;
@@ -13,11 +14,17 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.util.Map;
+import java.util.Optional;
 
 public class GeometryMapper {
     private static final Vector3fc CENTRE_OFFSET = new Vector3f(8.0F, 0.0F, 8.0F);
 
-    public static BedrockGeometryContext mapGeometry(String identifier, String boneName, ResolvedModel model, ResourceLocation texture) {
+    public static Optional<BedrockGeometryContext> mapGeometry(String identifier, String boneName, ResolvedModel model, ResourceLocation texture) {
+        UnbakedGeometry top = model.getTopGeometry();
+        if (top == UnbakedGeometry.EMPTY) {
+            return Optional.empty();
+        }
+
         BedrockGeometry.Builder builder = BedrockGeometry.builder(identifier);
         // Blockbench seems to always use these values TODO that's wrong
         builder.withVisibleBoundsWidth(4.0F);
@@ -33,7 +40,7 @@ public class GeometryMapper {
         Vector3f min = new Vector3f(Float.MAX_VALUE);
         Vector3f max = new Vector3f(Float.MIN_VALUE);
 
-        SimpleUnbakedGeometry geometry = (SimpleUnbakedGeometry) model.getTopGeometry();
+        SimpleUnbakedGeometry geometry = (SimpleUnbakedGeometry) top;
         for (BlockElement element : geometry.elements()) {
             // TODO the origin here is wrong, some models seem to be mirrored weirdly in blockbench
             BedrockGeometry.Cube cube = mapBlockElement(element).build();
@@ -48,7 +55,7 @@ public class GeometryMapper {
 
         // Bind to the bone of the current item slot
         bone.withBinding("q.item_slot_to_bone_name(context.item_slot)");
-        return new BedrockGeometryContext(builder.withBone(bone).build(), texture);
+        return Optional.of(new BedrockGeometryContext(builder.withBone(bone).build(), texture));
     }
 
     private static BedrockGeometry.Cube.Builder mapBlockElement(BlockElement element) {
