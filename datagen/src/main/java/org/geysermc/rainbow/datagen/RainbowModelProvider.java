@@ -32,12 +32,12 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class RainbowModelProvider extends FabricModelProvider {
-    private final HolderLookup.Provider registries;
+    private final CompletableFuture<HolderLookup.Provider> registries;
     private final PackOutput.PathProvider bedrockPackPathProvider;
     private Map<Item, ClientItem> itemInfosMap;
     private Map<ResourceLocation, ModelInstance> models;
 
-    public RainbowModelProvider(FabricDataOutput output, HolderLookup.Provider registries) {
+    public RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
         super(output);
         this.registries = registries;
         bedrockPackPathProvider = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, "bedrock");
@@ -47,14 +47,17 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
     public @NotNull CompletableFuture<?> run(CachedOutput output) {
         CompletableFuture<?> vanillaModels = super.run(output);
 
-        BedrockPack pack = BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"),
-                new Serializer(output, registries, bedrockPackPathProvider), new ModelResolver(itemInfosMap, models)).build();
+        CompletableFuture<BedrockPack> bedrockPack = registries.thenApply(registries -> {
+            BedrockPack pack = BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"),
+                    new Serializer(output, registries, bedrockPackPathProvider), new ModelResolver(itemInfosMap, models)).build();
 
-        for (Item item : itemInfosMap.keySet()) {
-            pack.map(getVanillaItem(item).builtInRegistryHolder(), getVanillaDataComponentPatch(item));
-        }
+            for (Item item : itemInfosMap.keySet()) {
+                pack.map(getVanillaItem(item).builtInRegistryHolder(), getVanillaDataComponentPatch(item));
+            }
+            return pack;
+        });
 
-        return CompletableFuture.allOf(vanillaModels, pack.save());
+        return CompletableFuture.allOf(vanillaModels, bedrockPack.thenCompose(BedrockPack::save));
     }
 
     protected abstract Item getVanillaItem(Item modded);
