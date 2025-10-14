@@ -34,13 +34,6 @@ dependencies {
 
     modImplementation(libs.fabric.loader)
     modImplementation(libs.fabric.api)
-
-    implementation(libs.creative.api)
-    implementation(libs.creative.serializer.minecraft)
-    implementation(libs.packconverter)
-    include(libs.creative.api)
-    include(libs.creative.serializer.minecraft)
-    include(libs.packconverter)
 }
 
 tasks {
