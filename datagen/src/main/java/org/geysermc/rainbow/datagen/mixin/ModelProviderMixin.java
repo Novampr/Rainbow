@@ -19,7 +19,7 @@ public abstract class ModelProviderMixin implements DataProvider {
     public void setItemInfosInRainbowModelProvider(CachedOutput output, CallbackInfoReturnable<CompletableFuture<?>> callbackInfoReturnable,
                                                    @Local ModelProvider.ItemInfoCollector itemInfoCollector, @Local ModelProvider.SimpleModelCollector simpleModelCollector) {
         if ((Object) this instanceof RainbowModelProvider rainbowModelProvider) {
-            rainbowModelProvider.setItemInfosMap(((ItemInfoCollectorAccessor) itemInfoCollector).getItemInfos());
+            rainbowModelProvider.setItemInfos(((ItemInfoCollectorAccessor) itemInfoCollector).getItemInfos());
             rainbowModelProvider.setModels(((SimpleModelCollectorAccessor) simpleModelCollector).getModels());
         }
     }

@@ -22,6 +22,7 @@ import net.minecraft.world.item.equipment.EquipmentAsset;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.pack.BedrockPack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,13 +38,20 @@ import java.util.concurrent.CompletableFuture;
 public abstract class RainbowModelProvider extends FabricModelProvider {
     private final CompletableFuture<HolderLookup.Provider> registries;
     private final PackOutput.PathProvider bedrockPackPathProvider;
-    private Map<Item, ClientItem> itemInfosMap;
+    private final Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos;
+    private Map<Item, ClientItem> itemInfos;
     private Map<ResourceLocation, ModelInstance> models;
 
-    public RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+    public RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries,
+                                Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos) {
         super(output);
         this.registries = registries;
+        this.equipmentInfos = equipmentInfos;
         bedrockPackPathProvider = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, "bedrock");
+    }
+
+    public RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+        this(output, registries, Map.of());
     }
 
     @Override
@@ -53,10 +61,10 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         CompletableFuture<BedrockPack> bedrockPack = ClientPackLoader.openClientResources()
                 .thenCompose(resourceManager -> registries.thenApply(registries -> {
                     try (resourceManager) {
-                        BedrockPack pack = BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"),
-                                new Serializer(output, registries, bedrockPackPathProvider), new ModelResolver(resourceManager, itemInfosMap, models)).build();
+                        BedrockPack pack = createBedrockPack(new Serializer(output, registries, bedrockPackPathProvider),
+                                new DatagenResolver(resourceManager, equipmentInfos, itemInfos, models)).build();
 
-                        for (Item item : itemInfosMap.keySet()) {
+                        for (Item item : itemInfos.keySet()) {
                             pack.map(getVanillaItem(item).builtInRegistryHolder(), getVanillaDataComponentPatch(item));
                         }
                         return pack;
@@ -64,6 +72,10 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
                 }));
 
         return CompletableFuture.allOf(vanillaModels, bedrockPack.thenCompose(BedrockPack::save));
+    }
+
+    protected BedrockPack.Builder createBedrockPack(PackSerializer serializer, AssetResolver resolver) {
+        return BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"), serializer, resolver);
     }
 
     protected abstract Item getVanillaItem(Item modded);
@@ -74,10 +86,12 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         return builder.build();
     }
 
-    public void setItemInfosMap(Map<Item, ClientItem> itemInfosMap) {
-        this.itemInfosMap = itemInfosMap;
+    @ApiStatus.Internal
+    public void setItemInfos(Map<Item, ClientItem> itemInfos) {
+        this.itemInfos = itemInfos;
     }
 
+    @ApiStatus.Internal
     public void setModels(Map<ResourceLocation, ModelInstance> models) {
         this.models = models;
     }
@@ -96,17 +110,20 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         }
     }
 
-    private static class ModelResolver implements AssetResolver {
+    private static class DatagenResolver implements AssetResolver {
         private final ResourceManager resourceManager;
-        private final Map<ResourceLocation, ClientItem> itemInfosMap;
+        private final Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos;
+        private final Map<ResourceLocation, ClientItem> itemInfos;
         private final Map<ResourceLocation, ModelInstance> models;
         private final Map<ResourceLocation, Optional<ResolvedModel>> resolvedModelCache = new HashMap<>();
 
-        private ModelResolver(ResourceManager resourceManager, Map<Item, ClientItem> itemInfosMap, Map<ResourceLocation, ModelInstance> models) {
+        private DatagenResolver(ResourceManager resourceManager, Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos,
+                                Map<Item, ClientItem> itemInfos, Map<ResourceLocation, ModelInstance> models) {
             this.resourceManager = resourceManager;
-            this.itemInfosMap = new HashMap<>();
-            for (Map.Entry<Item, ClientItem> entry : itemInfosMap.entrySet()) {
-                this.itemInfosMap.put(entry.getKey().builtInRegistryHolder().key().location(), entry.getValue());
+            this.equipmentInfos = equipmentInfos;
+            this.itemInfos = new HashMap<>();
+            for (Map.Entry<Item, ClientItem> entry : itemInfos.entrySet()) {
+                this.itemInfos.put(entry.getKey().builtInRegistryHolder().key().location(), entry.getValue());
             }
             this.models = models;
         }
@@ -141,12 +158,12 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
 
         @Override
         public Optional<ClientItem> getClientItem(ResourceLocation location) {
-            return Optional.ofNullable(itemInfosMap.get(location));
+            return Optional.ofNullable(itemInfos.get(location));
         }
 
         @Override
         public Optional<EquipmentClientInfo> getEquipmentInfo(ResourceKey<EquipmentAsset> key) {
-            return Optional.empty(); // TODO
+            return Optional.ofNullable(equipmentInfos.get(key));
         }
     }
 }
