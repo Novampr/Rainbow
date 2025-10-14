@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.command;
+package org.geysermc.rainbow.client.command;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;

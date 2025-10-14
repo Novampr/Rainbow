@@ -4,8 +4,6 @@ import com.mojang.serialization.JsonOps;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
@@ -18,10 +16,11 @@ import org.apache.commons.io.IOUtils;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
 import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
 import org.geysermc.rainbow.mapping.PackContext;
+import org.geysermc.rainbow.mapping.geometry.NoopGeometryRenderer;
 import org.geysermc.rainbow.mapping.geyser.GeyserMappings;
-import org.geysermc.rainbow.mixin.SplashRendererAccessor;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileOutputStream;
@@ -74,7 +73,9 @@ public class BedrockPack {
 
     private final ProblemReporter.Collector reporter;
 
-    public BedrockPack(String name) throws IOException {
+    private final PackContext context;
+
+    public BedrockPack(String name, AssetResolver assetResolver) throws IOException {
         this.name = name;
 
         // Not reading existing item mappings/texture atlas for now since that doesn't work all that well yet
@@ -88,6 +89,14 @@ public class BedrockPack {
         itemTextures = BedrockTextures.builder();
 
         reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name + " ");
+
+        context = new PackContext(mappings, packPath, item -> {
+            itemTextures.withItemTexture(item);
+            if (item.exportTexture()) {
+                texturesToExport.add(item.texture());
+            }
+            bedrockItems.add(item);
+        }, assetResolver, NoopGeometryRenderer.INSTANCE, texturesToExport::add);
     }
 
     public String name() {
@@ -113,13 +122,6 @@ public class BedrockPack {
                 reporter.report(problem);
             }
         };
-        PackContext context = new PackContext(mappings, packPath, item -> {
-            itemTextures.withItemTexture(item);
-            if (item.exportTexture()) {
-                texturesToExport.add(item.texture());
-            }
-            bedrockItems.add(item);
-        }, texturesToExport::add);
 
         Optional<? extends ResourceLocation> patchedModel = stack.getComponentsPatch().get(DataComponents.ITEM_MODEL);
         //noinspection OptionalAssignedToNull - annoying Mojang
@@ -148,7 +150,7 @@ public class BedrockPack {
         boolean success = true;
 
         try {
-            CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve(MAPPINGS_FILE), RegistryOps.create(JsonOps.INSTANCE, Minecraft.getInstance().level.registryAccess()));
+            CodecUtil.trySaveJson(GeyserMappings.CODEC, mappings, exportPath.resolve(MAPPINGS_FILE), RegistryOps.create(JsonOps.INSTANCE, context.assetResolver().registries()));
             CodecUtil.trySaveJson(PackManifest.CODEC, manifest, packPath.resolve(MANIFEST_FILE));
             CodecUtil.trySaveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), packPath.resolve(ITEM_ATLAS_FILE));
         } catch (IOException | NullPointerException exception) {
@@ -165,8 +167,8 @@ public class BedrockPack {
         }
 
         for (ResourceLocation texture : texturesToExport) {
-            texture = texture.withPath(path -> "textures/" + path + ".png");
-            try (InputStream inputTexture = Minecraft.getInstance().getResourceManager().open(texture)) {
+            texture = texture.withPath(path -> "textures/" + path + ".png"); // FIXME
+            try (InputStream inputTexture = context.assetResolver().getTexture(texture)) {
                 Path texturePath = packPath.resolve(texture.getPath());
                 CodecUtil.ensureDirectoryExists(texturePath.getParent());
                 try (OutputStream outputTexture = new FileOutputStream(texturePath.toFile())) {
@@ -227,11 +229,11 @@ Textures tried to export: %d
 
     private static String randomSummaryComment() {
         if (RANDOM.nextDouble() < 0.6) {
-            SplashRenderer splash = Minecraft.getInstance().getSplashManager().getSplash();
+            /*SplashRenderer splash = Minecraft.getInstance().getSplashManager().getSplash();
             if (splash == null) {
                 return "Undefined Undefined :(";
             }
-            return ((SplashRendererAccessor) splash).getSplash();
+            return ((SplashRendererAccessor) splash).getSplash();*/ // TODO
         }
         return randomBuiltinSummaryComment();
     }

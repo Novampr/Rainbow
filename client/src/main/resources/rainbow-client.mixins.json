@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.geysermc.rainbow.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "EntityRenderDispatcherAccessor",
+    "GuiItemRenderStateMixin",
+    "ModelManagerMixin",
+    "PictureInPictureRendererAccessor",
+    "PictureInPictureRendererMixin",
+    "SplashRendererAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

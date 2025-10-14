@@ -1,6 +1,5 @@
 package org.geysermc.rainbow.mapping;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.BlockModelWrapper;
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.renderer.item.ConditionalItemModel;
@@ -38,13 +37,11 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.ArrayUtils;
-import org.geysermc.rainbow.accessor.ResolvedModelAccessor;
 import org.geysermc.rainbow.mapping.animation.AnimationMapper;
 import org.geysermc.rainbow.mapping.animation.BedrockAnimationContext;
 import org.geysermc.rainbow.mapping.attachable.AttachableMapper;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
 import org.geysermc.rainbow.mapping.geometry.GeometryMapper;
-import org.geysermc.rainbow.mapping.geometry.GeometryRenderer;
 import org.geysermc.rainbow.mapping.geyser.GeyserBaseDefinition;
 import org.geysermc.rainbow.mapping.geyser.GeyserItemDefinition;
 import org.geysermc.rainbow.mapping.geyser.GeyserLegacyDefinition;
@@ -72,23 +69,19 @@ public class BedrockItemMapper {
             .map(ResourceLocation::withDefaultNamespace)
             .toList();
 
-    private static ResolvedModelAccessor getModels() {
-        return (ResolvedModelAccessor) Minecraft.getInstance().getModelManager();
-    }
-
     private static ResourceLocation getModelId(ItemModel.Unbaked model) {
         //noinspection unchecked
         return ((LateBoundIdMapperAccessor<ResourceLocation, ?>) ItemModels.ID_MAPPER).getIdToValue().inverse().get(model.type());
     }
 
     public static void tryMapStack(ItemStack stack, ResourceLocation modelLocation, ProblemReporter reporter, PackContext context) {
-        getModels().rainbow$getClientItem(modelLocation).map(ClientItem::model)
+        context.assetResolver().getClientItem(modelLocation).map(ClientItem::model)
                 .ifPresentOrElse(model -> mapItem(model, stack, reporter.forChild(() -> "client item definition " + modelLocation + " "), base -> new GeyserSingleDefinition(base, Optional.of(modelLocation)), context),
                         () -> reporter.report(() -> "missing client item definition " + modelLocation));
     }
 
     public static void tryMapStack(ItemStack stack, int customModelData, ProblemReporter reporter, PackContext context) {
-        ItemModel.Unbaked vanillaModel = getModels().rainbow$getClientItem(stack.get(DataComponents.ITEM_MODEL)).map(ClientItem::model).orElseThrow();
+        ItemModel.Unbaked vanillaModel = context.assetResolver().getClientItem(stack.get(DataComponents.ITEM_MODEL)).map(ClientItem::model).orElseThrow();
         ProblemReporter childReporter = reporter.forChild(() -> "item model " + vanillaModel + " with custom model data " + customModelData + " ");
         if (vanillaModel instanceof RangeSelectItemModel.Unbaked(RangeSelectItemModelProperty property, float scale, List<RangeSelectItemModel.Entry> entries, Optional<ItemModel.Unbaked> fallback)) {
             // WHY, Mojang?
@@ -130,7 +123,7 @@ public class BedrockItemMapper {
     private static void mapBlockModelWrapper(BlockModelWrapper.Unbaked model, MappingContext context) {
         ResourceLocation itemModelLocation = model.model();
 
-        getModels().rainbow$getResolvedModel(itemModelLocation)
+        context.packContext().assetResolver().getResolvedModel(itemModelLocation)
                 .ifPresentOrElse(itemModel -> {
                     ResolvedModel parentModel = itemModel.parent();
                     // debugName() returns the resource location of the model as a string
@@ -290,13 +283,15 @@ public class BedrockItemMapper {
             boolean exportTexture = true;
             if (customModel.isPresent()) {
                 texture = texture.withPath(path -> path + "_icon");
-                GeometryRenderer.render(stack, packContext.packPath().resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png"));
-                exportTexture = false;
+                // FIXME Bit of a hack, preferably render geometry at a later stage
+                exportTexture = !packContext.geometryRenderer().render(stack, packContext.packPath().resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png"));
                 packContext.additionalTextureConsumer().accept(geometryTexture);
             }
 
             packContext.itemConsumer().accept(new BedrockItem(bedrockIdentifier, base.textureName(), texture, exportTexture,
-                    AttachableMapper.mapItem(stack.getComponentsPatch(), bedrockIdentifier, bedrockGeometry, bedrockAnimation, packContext.additionalTextureConsumer()),
+                    AttachableMapper.mapItem(stack.getComponentsPatch(), bedrockIdentifier, bedrockGeometry, bedrockAnimation,
+                            packContext.assetResolver(),
+                            packContext.additionalTextureConsumer()),
                     bedrockGeometry.map(BedrockGeometryContext::geometry), bedrockAnimation.map(BedrockAnimationContext::animation)));
         }
 

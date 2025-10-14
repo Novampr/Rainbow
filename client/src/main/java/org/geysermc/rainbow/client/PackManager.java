@@ -1,4 +1,4 @@
-package org.geysermc.rainbow;
+package org.geysermc.rainbow.client;
 
 import org.geysermc.rainbow.pack.BedrockPack;
 
@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public final class PackManager {
 
@@ -17,7 +16,7 @@ public final class PackManager {
             throw new IllegalStateException("Already started a pack (" + currentPack.get().name() + ")");
         }
 
-        currentPack = Optional.of(new BedrockPack(name));
+        currentPack = Optional.of(new BedrockPack(name, new MinecraftAssetResolver()));
     }
 
     public void run(Consumer<BedrockPack> consumer) {

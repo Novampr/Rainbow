@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.render;
+package org.geysermc.rainbow.client.render;
 
 public interface PictureInPictureCopyRenderer {
 

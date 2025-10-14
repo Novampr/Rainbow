@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mixin;
+package org.geysermc.rainbow.client.mixin;
 
 import net.minecraft.client.gui.components.SplashRenderer;
 import org.spongepowered.asm.mixin.Mixin;

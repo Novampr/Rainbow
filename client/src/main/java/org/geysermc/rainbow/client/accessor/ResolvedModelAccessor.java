@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.accessor;
+package org.geysermc.rainbow.client.accessor;
 
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.resources.model.ResolvedModel;

@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mixin;
+package org.geysermc.rainbow.client.mixin;
 
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.resources.model.EquipmentAssetManager;

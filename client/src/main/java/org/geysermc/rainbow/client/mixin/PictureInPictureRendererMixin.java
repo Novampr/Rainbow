@@ -1,8 +1,8 @@
-package org.geysermc.rainbow.mixin;
+package org.geysermc.rainbow.client.mixin;
 
 import com.mojang.blaze3d.textures.GpuTexture;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
-import org.geysermc.rainbow.render.PictureInPictureCopyRenderer;
+import org.geysermc.rainbow.client.render.PictureInPictureCopyRenderer;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

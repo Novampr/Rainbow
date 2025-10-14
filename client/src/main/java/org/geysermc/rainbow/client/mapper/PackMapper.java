@@ -1,14 +1,13 @@
-package org.geysermc.rainbow.mapper;
+package org.geysermc.rainbow.client.mapper;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import org.geysermc.rainbow.PackManager;
+import org.geysermc.rainbow.client.PackManager;
 import org.geysermc.rainbow.pack.BedrockPack;
 
 import java.util.Objects;
-import java.util.Optional;
 
 public class PackMapper {
     private final PackManager packManager;

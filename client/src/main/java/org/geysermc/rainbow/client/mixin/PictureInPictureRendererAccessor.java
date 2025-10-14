@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mixin;
+package org.geysermc.rainbow.client.mixin;
 
 import com.mojang.blaze3d.textures.GpuTexture;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;

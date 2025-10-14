@@ -1,7 +1,6 @@
 package org.geysermc.rainbow.mapping.attachable;
 
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.EquipmentAssetManager;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.core.component.DataComponentPatch;
@@ -9,9 +8,9 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
+import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.animation.BedrockAnimationContext;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
-import org.geysermc.rainbow.mixin.EntityRenderDispatcherAccessor;
 import org.geysermc.rainbow.pack.attachable.BedrockAttachable;
 
 import java.util.List;
@@ -21,17 +20,14 @@ import java.util.function.Consumer;
 public class AttachableMapper {
 
     public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, Optional<BedrockGeometryContext> customGeometry,
-                                                      Optional<BedrockAnimationContext> customAnimation, Consumer<ResourceLocation> textureConsumer) {
+                                                      Optional<BedrockAnimationContext> customAnimation, AssetResolver assetResolver, Consumer<ResourceLocation> textureConsumer) {
         // Crazy optional statement
         // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
         return customGeometry
                 .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.geometry().definitions().getFirst(), geometry.texture().getPath()))
                 .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
                         .flatMap(optional -> (Optional<Equippable>) optional)
-                        .flatMap(equippable -> {
-                            EquipmentAssetManager equipmentAssets = ((EntityRenderDispatcherAccessor) Minecraft.getInstance().getEntityRenderDispatcher()).getEquipmentAssets();
-                            return equippable.assetId().map(asset -> Pair.of(equippable.slot(), equipmentAssets.get(asset)));
-                        })
+                        .flatMap(equippable -> equippable.assetId().map(asset -> Pair.of(equippable.slot(), assetResolver.getEquipmentInfo(asset))))
                         .filter(assetInfo -> assetInfo.getSecond() != EquipmentAssetManager.MISSING)
                         .map(assetInfo -> assetInfo
                                 .mapSecond(info -> info.getLayers(getLayer(assetInfo.getFirst()))))

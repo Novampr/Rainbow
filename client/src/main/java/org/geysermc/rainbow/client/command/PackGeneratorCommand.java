@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.command;
+package org.geysermc.rainbow.client.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -10,9 +10,9 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import org.geysermc.rainbow.PackManager;
-import org.geysermc.rainbow.mapper.InventoryMapper;
-import org.geysermc.rainbow.mapper.PackMapper;
+import org.geysermc.rainbow.client.PackManager;
+import org.geysermc.rainbow.client.mapper.InventoryMapper;
+import org.geysermc.rainbow.client.mapper.PackMapper;
 import org.geysermc.rainbow.pack.BedrockPack;
 
 import java.nio.file.Path;
