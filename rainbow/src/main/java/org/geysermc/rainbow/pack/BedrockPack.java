@@ -35,6 +35,7 @@ import java.util.function.UnaryOperator;
 
 public class BedrockPack {
     private final String name;
+    private final PackManifest manifest;
     private final PackPaths paths;
     private final PackSerializer serializer;
 
@@ -45,13 +46,13 @@ public class BedrockPack {
     private final IntSet customModelDataMapped = new IntOpenHashSet();
 
     private final PackContext context;
-    private final PackManifest manifest;
     private final ProblemReporter.Collector reporter;
 
-    public BedrockPack(String name, PackPaths paths, PackSerializer serializer, AssetResolver assetResolver,
+    public BedrockPack(String name, PackManifest manifest, PackPaths paths, PackSerializer serializer, AssetResolver assetResolver,
                        GeometryRenderer geometryRenderer, ProblemReporter.Collector reporter,
                        boolean reportSuccesses) {
         this.name = name;
+        this.manifest = manifest;
         this.paths = paths;
         this.serializer = serializer;
 
@@ -63,7 +64,6 @@ public class BedrockPack {
             }
             bedrockItems.add(item);
         }, assetResolver, geometryRenderer, texturesToExport::add, reportSuccesses);
-        manifest = defaultManifest(name);
         this.reporter = reporter;
     }
 
@@ -165,11 +165,6 @@ public class BedrockPack {
         return reporter;
     }
 
-    private static PackManifest defaultManifest(String name) {
-        return new PackManifest(new PackManifest.Header(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0), PackConstants.ENGINE_VERSION),
-                List.of(new PackManifest.Module(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0))));
-    }
-
     public static Builder builder(String name, Path mappingsPath, Path packRootPath, PackSerializer packSerializer, AssetResolver assetResolver) {
         return new Builder(name, mappingsPath, packRootPath, packSerializer, assetResolver);
     }
@@ -187,6 +182,7 @@ public class BedrockPack {
         private final Path packRootPath;
         private final PackSerializer packSerializer;
         private final AssetResolver assetResolver;
+        private PackManifest manifest;
         private UnaryOperator<Path> attachablesPath = resolve(ATTACHABLES_DIRECTORY);
         private UnaryOperator<Path> geometryPath = resolve(GEOMETRY_DIRECTORY);
         private UnaryOperator<Path> animationPath = resolve(ANIMATION_DIRECTORY);
@@ -204,6 +200,12 @@ public class BedrockPack {
             this.reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name + " ");
             this.packSerializer = packSerializer;
             this.assetResolver = assetResolver;
+            manifest = defaultManifest(name);
+        }
+
+        public Builder withManifest(PackManifest manifest) {
+            this.manifest = manifest;
+            return this;
         }
 
         public Builder withAttachablesPath(Path absolute) {
@@ -275,11 +277,16 @@ public class BedrockPack {
             PackPaths paths = new PackPaths(mappingsPath, packRootPath, attachablesPath.apply(packRootPath),
                     geometryPath.apply(packRootPath), animationPath.apply(packRootPath), manifestPath.apply(packRootPath),
                     itemAtlasPath.apply(packRootPath), Optional.ofNullable(packZipFile));
-            return new BedrockPack(name, paths, packSerializer, assetResolver, geometryRenderer, reporter, reportSuccesses);
+            return new BedrockPack(name, manifest, paths, packSerializer, assetResolver, geometryRenderer, reporter, reportSuccesses);
         }
 
         private static UnaryOperator<Path> resolve(Path child) {
             return root -> root.resolve(child);
+        }
+
+        private static PackManifest defaultManifest(String name) {
+            return new PackManifest(new PackManifest.Header(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0), PackConstants.ENGINE_VERSION),
+                    List.of(new PackManifest.Module(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0))));
         }
     }
 
