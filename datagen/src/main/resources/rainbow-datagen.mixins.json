@@ -1,12 +1,12 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "org.geysermc.rainbow.mixin",
+  "package": "org.geysermc.rainbow.datagen.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "LateBoundIdMapperAccessor",
-    "RangeSelectItemModelAccessor",
-    "TextureSlotsAccessor"
+    "ItemInfoCollectorAccessor",
+    "ModelProviderMixin",
+    "SimpleModelCollectorAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

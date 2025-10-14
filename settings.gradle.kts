@@ -11,5 +11,6 @@ pluginManagement {
 
 include(":rainbow")
 include(":client")
+include(":datagen")
 
 rootProject.name = "rainbow-parent"
