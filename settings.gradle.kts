@@ -6,6 +6,10 @@ pluginManagement {
         }
         gradlePluginPortal()
     }
+    includeBuild("build-logic")
 }
 
-rootProject.name = "Rainbow"
+include(":rainbow")
+include(":client")
+
+rootProject.name = "rainbow-parent"

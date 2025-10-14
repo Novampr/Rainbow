@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.fabric.loom)
+    id("fabric-loom")
 }
 
 version = properties["mod_version"]!! as String
