@@ -27,7 +27,7 @@ public class AttachableMapper {
                 .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.geometry().definitions().getFirst(), geometry.texture().getPath()))
                 .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
                         .flatMap(optional -> (Optional<Equippable>) optional)
-                        .flatMap(equippable -> equippable.assetId().map(asset -> Pair.of(equippable.slot(), assetResolver.getEquipmentInfo(asset))))
+                        .flatMap(equippable -> equippable.assetId().flatMap(assetResolver::getEquipmentInfo).map(info -> Pair.of(equippable.slot(), info)))
                         .filter(assetInfo -> assetInfo.getSecond() != EquipmentAssetManager.MISSING)
                         .map(assetInfo -> assetInfo
                                 .mapSecond(info -> info.getLayers(getLayer(assetInfo.getFirst()))))

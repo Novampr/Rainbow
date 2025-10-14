@@ -167,7 +167,7 @@ public class BedrockPack {
         }
 
         for (ResourceLocation texture : texturesToExport) {
-            texture = texture.withPath(path -> "textures/" + path + ".png"); // FIXME
+            texture = texture.withPath(path -> "textures/" + path + ".png");
             try (InputStream inputTexture = context.assetResolver().getTexture(texture)) {
                 Path texturePath = packPath.resolve(texture.getPath());
                 CodecUtil.ensureDirectoryExists(texturePath.getParent());

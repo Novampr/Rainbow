@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
@@ -17,9 +18,9 @@ public interface AssetResolver {
 
     Optional<ClientItem> getClientItem(ResourceLocation location);
 
-    EquipmentClientInfo getEquipmentInfo(ResourceKey<EquipmentAsset> key);
+    Optional<EquipmentClientInfo> getEquipmentInfo(ResourceKey<EquipmentAsset> key);
 
-    InputStream getTexture(ResourceLocation location);
+    InputStream getTexture(ResourceLocation location) throws IOException;
 
     HolderLookup.Provider registries();
 }
