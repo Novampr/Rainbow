@@ -26,6 +26,7 @@ import java.util.Objects;
 // TODO maybe just use this even for normal 2D items, not sure, could be useful for composite models and stuff
 // TODO output in a size bedrock likes
 public class MinecraftGeometryRenderer implements GeometryRenderer {
+    public static final MinecraftGeometryRenderer INSTANCE = new MinecraftGeometryRenderer();
 
     @Override
     public boolean render(ItemStack stack, Path path) {

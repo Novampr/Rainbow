@@ -284,7 +284,7 @@ public class BedrockItemMapper {
             if (customModel.isPresent()) {
                 texture = texture.withPath(path -> path + "_icon");
                 // FIXME Bit of a hack, preferably render geometry at a later stage
-                exportTexture = !packContext.geometryRenderer().render(stack, packContext.packPath().resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png"));
+                exportTexture = !packContext.geometryRenderer().render(stack, packContext.paths().packRoot().resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png"));
                 packContext.additionalTextureConsumer().accept(geometryTexture);
             }
 
