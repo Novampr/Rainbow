@@ -8,6 +8,10 @@ group = properties["maven_group"]!! as String
 val archivesBaseName = properties["archives_base_name"]!! as String
 val targetJavaVersion = 21
 
+base {
+    archivesName = archivesBaseName
+}
+
 repositories {
     maven {
         name = "ParchmentMC"
