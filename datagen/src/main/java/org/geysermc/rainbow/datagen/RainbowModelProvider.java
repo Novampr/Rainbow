@@ -16,6 +16,7 @@ import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import org.geysermc.rainbow.mapping.AssetResolver;
@@ -24,6 +25,8 @@ import org.geysermc.rainbow.pack.BedrockPack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -47,15 +50,18 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
     public @NotNull CompletableFuture<?> run(CachedOutput output) {
         CompletableFuture<?> vanillaModels = super.run(output);
 
-        CompletableFuture<BedrockPack> bedrockPack = registries.thenApply(registries -> {
-            BedrockPack pack = BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"),
-                    new Serializer(output, registries, bedrockPackPathProvider), new ModelResolver(itemInfosMap, models)).build();
+        CompletableFuture<BedrockPack> bedrockPack = ClientPackLoader.openClientResources()
+                .thenCompose(resourceManager -> registries.thenApply(registries -> {
+                    try (resourceManager) {
+                        BedrockPack pack = BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"),
+                                new Serializer(output, registries, bedrockPackPathProvider), new ModelResolver(resourceManager, itemInfosMap, models)).build();
 
-            for (Item item : itemInfosMap.keySet()) {
-                pack.map(getVanillaItem(item).builtInRegistryHolder(), getVanillaDataComponentPatch(item));
-            }
-            return pack;
-        });
+                        for (Item item : itemInfosMap.keySet()) {
+                            pack.map(getVanillaItem(item).builtInRegistryHolder(), getVanillaDataComponentPatch(item));
+                        }
+                        return pack;
+                    }
+                }));
 
         return CompletableFuture.allOf(vanillaModels, bedrockPack.thenCompose(BedrockPack::save));
     }
@@ -81,7 +87,6 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         @Override
         public <T> CompletableFuture<?> saveJson(Codec<T> codec, T object, Path path) {
             ResourceLocation location = ResourceLocation.withDefaultNamespace(path.toString());
-            System.out.println("saving bedrock " + location);
             return DataProvider.saveStable(output, registries, codec, object, provider.json(location));
         }
 
@@ -92,10 +97,13 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
     }
 
     private static class ModelResolver implements AssetResolver {
+        private final ResourceManager resourceManager;
         private final Map<ResourceLocation, ClientItem> itemInfosMap;
         private final Map<ResourceLocation, ModelInstance> models;
+        private final Map<ResourceLocation, Optional<ResolvedModel>> resolvedModelCache = new HashMap<>();
 
-        private ModelResolver(Map<Item, ClientItem> itemInfosMap, Map<ResourceLocation, ModelInstance> models) {
+        private ModelResolver(ResourceManager resourceManager, Map<Item, ClientItem> itemInfosMap, Map<ResourceLocation, ModelInstance> models) {
+            this.resourceManager = resourceManager;
             this.itemInfosMap = new HashMap<>();
             for (Map.Entry<Item, ClientItem> entry : itemInfosMap.entrySet()) {
                 this.itemInfosMap.put(entry.getKey().builtInRegistryHolder().key().location(), entry.getValue());
@@ -105,8 +113,14 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
 
         @Override
         public Optional<ResolvedModel> getResolvedModel(ResourceLocation location) {
-            return Optional.ofNullable(models.get(location))
+            return resolvedModelCache.computeIfAbsent(location, key -> Optional.ofNullable(models.get(location))
                     .map(instance -> BlockModel.fromStream(new StringReader(instance.get().toString())))
+                    .or(() -> {
+                        try (BufferedReader reader = resourceManager.openAsReader(location.withPrefix("models/").withSuffix(".json"))) {
+                            return Optional.of(BlockModel.fromStream(reader));
+                        } catch (IOException ignored) {}
+                        return Optional.empty();
+                    })
                     .map(model -> new ResolvedModel() {
                         @Override
                         public @NotNull UnbakedModel wrapped() {
@@ -115,14 +129,14 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
 
                         @Override
                         public @Nullable ResolvedModel parent() {
-                            return null;
+                            return Optional.ofNullable(model.parent()).flatMap(parent -> getResolvedModel(parent)).orElse(null);
                         }
 
                         @Override
                         public @NotNull String debugName() {
                             return location.toString();
                         }
-                    }); // Not perfect since we're not resolving parents, not sure how to manage that
+                    }));
         }
 
         @Override
