@@ -26,7 +26,7 @@ public record BedrockAnimation(BedrockVersion formatVersion, Map<String, Animati
     );
 
     public CompletableFuture<?> save(PackSerializer serializer, Path animationDirectory, String identifier) {
-        return serializer.saveJson(CODEC, this, animationDirectory.resolve(identifier + ".animation"));
+        return serializer.saveJson(CODEC, this, animationDirectory.resolve(identifier + ".animation.json"));
     }
 
     public static Builder builder() {

@@ -37,7 +37,7 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
 
     public CompletableFuture<?> save(PackSerializer serializer, Path attachablesDirectory) {
         // Get a safe attachable path by using Geyser's way of getting icons
-        return serializer.saveJson(CODEC, this, attachablesDirectory.resolve(Rainbow.fileSafeResourceLocation(info.identifier)));
+        return serializer.saveJson(CODEC, this, attachablesDirectory.resolve(Rainbow.fileSafeResourceLocation(info.identifier) + ".json"));
     }
 
     public static Builder builder(ResourceLocation identifier) {

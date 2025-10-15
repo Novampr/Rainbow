@@ -174,8 +174,8 @@ public class BedrockPack {
         private static final Path GEOMETRY_DIRECTORY = Path.of("models/entity");
         private static final Path ANIMATION_DIRECTORY = Path.of("animations");
 
-        private static final Path MANIFEST_FILE = Path.of("manifest");
-        private static final Path ITEM_ATLAS_FILE = Path.of("textures/item_texture");
+        private static final Path MANIFEST_FILE = Path.of("manifest.json");
+        private static final Path ITEM_ATLAS_FILE = Path.of("textures/item_texture.json");
 
         private final String name;
         private final Path mappingsPath;

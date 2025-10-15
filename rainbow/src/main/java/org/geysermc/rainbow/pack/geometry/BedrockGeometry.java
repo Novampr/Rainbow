@@ -33,7 +33,7 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
     );
 
     public CompletableFuture<?> save(PackSerializer serializer, Path geometryDirectory) {
-        return serializer.saveJson(CODEC, this, geometryDirectory.resolve(definitions.getFirst().info.identifier + ".geo"));
+        return serializer.saveJson(CODEC, this, geometryDirectory.resolve(definitions.getFirst().info.identifier + ".geo.json"));
     }
 
     public static BedrockGeometry of(GeometryDefinition... definitions) {

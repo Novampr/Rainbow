@@ -81,6 +81,7 @@ public class BedrockItemMapper {
     }
 
     public static void tryMapStack(ItemStack stack, int customModelData, ProblemReporter reporter, PackContext context) {
+        // TODO Improve this, use resouce log in problemreporter
         ItemModel.Unbaked vanillaModel = context.assetResolver().getClientItem(stack.get(DataComponents.ITEM_MODEL)).map(ClientItem::model).orElseThrow();
         ProblemReporter childReporter = reporter.forChild(() -> "item model " + vanillaModel + " with custom model data " + customModelData + " ");
         if (vanillaModel instanceof RangeSelectItemModel.Unbaked(RangeSelectItemModelProperty property, float scale, List<RangeSelectItemModel.Entry> entries, Optional<ItemModel.Unbaked> fallback)) {

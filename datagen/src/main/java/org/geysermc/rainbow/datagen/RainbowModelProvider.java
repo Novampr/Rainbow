@@ -37,20 +37,26 @@ import java.util.concurrent.CompletableFuture;
 
 public abstract class RainbowModelProvider extends FabricModelProvider {
     private final CompletableFuture<HolderLookup.Provider> registries;
-    private final PackOutput.PathProvider bedrockPackPathProvider;
     private final Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos;
+    private final Path outputRoot;
     private Map<Item, ClientItem> itemInfos;
     private Map<ResourceLocation, ModelInstance> models;
 
-    public RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries,
-                                Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos) {
+    protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries,
+                                Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos, ResourceLocation outputRoot) {
         super(output);
         this.registries = registries;
         this.equipmentInfos = equipmentInfos;
-        bedrockPackPathProvider = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, "bedrock");
+        this.outputRoot = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, outputRoot.getPath())
+                .file(outputRoot, "").getParent();
     }
 
-    public RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+    protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries,
+                                Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos) {
+        this(output, registries, equipmentInfos, ResourceLocation.withDefaultNamespace("bedrock"));
+    }
+
+    protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
         this(output, registries, Map.of());
     }
 
@@ -61,7 +67,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         CompletableFuture<BedrockPack> bedrockPack = ClientPackLoader.openClientResources()
                 .thenCompose(resourceManager -> registries.thenApply(registries -> {
                     try (resourceManager) {
-                        BedrockPack pack = createBedrockPack(new Serializer(output, registries, bedrockPackPathProvider),
+                        BedrockPack pack = createBedrockPack(outputRoot, new Serializer(output, registries),
                                 new DatagenResolver(resourceManager, equipmentInfos, itemInfos, models)).build();
 
                         for (Item item : itemInfos.keySet()) {
@@ -74,8 +80,8 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         return CompletableFuture.allOf(vanillaModels, bedrockPack.thenCompose(BedrockPack::save));
     }
 
-    protected BedrockPack.Builder createBedrockPack(PackSerializer serializer, AssetResolver resolver) {
-        return BedrockPack.builder("rainbow", Path.of("geyser_mappings"), Path.of("pack"), serializer, resolver);
+    protected BedrockPack.Builder createBedrockPack(Path outputRoot, PackSerializer serializer, AssetResolver resolver) {
+        return BedrockPack.builder("rainbow", outputRoot.resolve("geyser_mappings.json"), outputRoot.resolve("pack"), serializer, resolver);
     }
 
     protected abstract Item getVanillaItem(Item modded);
@@ -96,12 +102,11 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         this.models = models;
     }
 
-    private record Serializer(CachedOutput output, HolderLookup.Provider registries, PackOutput.PathProvider provider) implements PackSerializer {
+    private record Serializer(CachedOutput output, HolderLookup.Provider registries) implements PackSerializer {
 
         @Override
         public <T> CompletableFuture<?> saveJson(Codec<T> codec, T object, Path path) {
-            ResourceLocation location = ResourceLocation.withDefaultNamespace(path.toString());
-            return DataProvider.saveStable(output, registries, codec, object, provider.json(location));
+            return DataProvider.saveStable(output, registries, codec, object, path);
         }
 
         @Override
