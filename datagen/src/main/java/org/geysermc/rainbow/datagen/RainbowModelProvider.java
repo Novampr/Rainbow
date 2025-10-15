@@ -1,8 +1,10 @@
 package org.geysermc.rainbow.datagen;
 
+import com.google.common.hash.HashCode;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.minecraft.Util;
 import net.minecraft.client.data.models.model.ModelInstance;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.item.ClientItem;
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -67,7 +70,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         CompletableFuture<BedrockPack> bedrockPack = ClientPackLoader.openClientResources()
                 .thenCompose(resourceManager -> registries.thenApply(registries -> {
                     try (resourceManager) {
-                        BedrockPack pack = createBedrockPack(outputRoot, new Serializer(output, registries),
+                        BedrockPack pack = createBedrockPack(outputRoot, new Serializer(output, resourceManager, registries),
                                 new DatagenResolver(resourceManager, equipmentInfos, itemInfos, models)).build();
 
                         for (Item item : itemInfos.keySet()) {
@@ -102,7 +105,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         this.models = models;
     }
 
-    private record Serializer(CachedOutput output, HolderLookup.Provider registries) implements PackSerializer {
+    private record Serializer(CachedOutput output, ResourceManager resourceManager, HolderLookup.Provider registries) implements PackSerializer {
 
         @Override
         public <T> CompletableFuture<?> saveJson(Codec<T> codec, T object, Path path) {
@@ -111,7 +114,15 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
 
         @Override
         public CompletableFuture<?> saveTexture(ResourceLocation texture, Path path) {
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.runAsync(() -> {
+                ResourceLocation texturePath = texture.withPath(p -> "textures/" + p + ".png");
+                try (InputStream inputTexture = resourceManager.open(texturePath)) {
+                    byte[] textureBytes = inputTexture.readAllBytes();
+                    output.writeIfNeeded(path, textureBytes, HashCode.fromBytes(textureBytes));
+                } catch (IOException exception) {
+                    // TODO log
+                }
+            }, Util.backgroundExecutor().forName("PackSerializer-saveTexture"));
         }
     }
 
