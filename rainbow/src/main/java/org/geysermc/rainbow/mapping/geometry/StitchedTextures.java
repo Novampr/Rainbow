@@ -1,0 +1,77 @@
+package org.geysermc.rainbow.mapping.geometry;
+
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.TextureSlots;
+import net.minecraft.client.renderer.texture.SpriteContents;
+import net.minecraft.client.renderer.texture.SpriteLoader;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.metadata.animation.FrameSize;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.data.AtlasIds;
+import net.minecraft.resources.ResourceLocation;
+import org.geysermc.rainbow.mixin.SpriteContentsAccessor;
+import org.geysermc.rainbow.mixin.SpriteLoaderAccessor;
+import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+public record StitchedTextures(Map<String, TextureAtlasSprite> sprites, Supplier<NativeImage> stitched, int width, int height) {
+
+    public Optional<TextureAtlasSprite> getSprite(String key) {
+        if (TextureSlotsAccessor.invokeIsTextureReference(key)) {
+            key = key.substring(1);
+        }
+        return Optional.ofNullable(sprites.get(key));
+    }
+
+    public static StitchedTextures stitchModelTextures(TextureSlots textures) {
+        Map<String, Material> materials = ((TextureSlotsAccessor) textures).getResolvedValues();
+        SpriteLoader.Preparations preparations = prepareStitching(materials.values().stream().map(Material::texture));
+
+        Map<String, TextureAtlasSprite> sprites = new HashMap<>();
+        for (Map.Entry<String, Material> material : materials.entrySet()) {
+            sprites.put(material.getKey(), preparations.getSprite(material.getValue().texture()));
+        }
+        return new StitchedTextures(Map.copyOf(sprites), () -> stitchTextureAtlas(preparations), preparations.width(), preparations.height());
+    }
+
+    private static SpriteLoader.Preparations prepareStitching(Stream<ResourceLocation> textures) {
+        // Atlas ID doesn't matter much here, but BLOCKS is the most appropriate
+        // Not sure if 1024 should be the max supported texture size, but it seems to work
+        SpriteLoader spriteLoader = new SpriteLoader(AtlasIds.BLOCKS, 1024, 16, 16);
+        List<SpriteContents> sprites = textures.map(StitchedTextures::readSpriteContents).toList();
+        return  ((SpriteLoaderAccessor) spriteLoader).invokeStitch(sprites, 0, Util.backgroundExecutor());
+    }
+
+    private static SpriteContents readSpriteContents(ResourceLocation location) {
+        // TODO decorate path util
+        // TODO don't use ResourceManager
+        // TODO IO is on main thread here?
+        try (InputStream textureStream = Minecraft.getInstance().getResourceManager().open(location.withPath(path -> "textures/" + path + ".png"))) {
+            NativeImage texture = NativeImage.read(textureStream);
+            return new SpriteContents(location, new FrameSize(texture.getWidth(), texture.getHeight()), texture);
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private static NativeImage stitchTextureAtlas(SpriteLoader.Preparations preparations) {
+        NativeImage stitched = new NativeImage(preparations.width(), preparations.height(), false);
+        for (TextureAtlasSprite sprite : preparations.regions().values()) {
+            try (SpriteContents contents = sprite.contents()) {
+                ((SpriteContentsAccessor) contents).getOriginalImage().copyRect(stitched, 0, 0,
+                        sprite.getX(), sprite.getY(), contents.width(), contents.height(), false, false);
+            }
+        }
+        return stitched;
+    }
+}

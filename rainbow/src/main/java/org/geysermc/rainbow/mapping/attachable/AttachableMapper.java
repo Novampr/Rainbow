@@ -9,8 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
 import org.geysermc.rainbow.mapping.AssetResolver;
-import org.geysermc.rainbow.mapping.animation.BedrockAnimationContext;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
+import org.geysermc.rainbow.mapping.geometry.TextureHolder;
 import org.geysermc.rainbow.pack.attachable.BedrockAttachable;
 
 import java.util.List;
@@ -19,12 +19,12 @@ import java.util.function.Consumer;
 
 public class AttachableMapper {
 
-    public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, Optional<BedrockGeometryContext> customGeometry,
-                                                      Optional<BedrockAnimationContext> customAnimation, AssetResolver assetResolver, Consumer<ResourceLocation> textureConsumer) {
+    public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, BedrockGeometryContext geometryContext,
+                                                      AssetResolver assetResolver, Consumer<TextureHolder> textureConsumer) {
         // Crazy optional statement
         // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
-        return customGeometry
-                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.geometry().definitions().getFirst(), geometry.texture().getPath()))
+        return geometryContext.geometry()
+                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.definitions().getFirst(), geometryContext.texture().location().getPath()))
                 .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
                         .flatMap(optional -> (Optional<Equippable>) optional)
                         .flatMap(equippable -> equippable.assetId().flatMap(assetResolver::getEquipmentInfo).map(info -> Pair.of(equippable.slot(), info)))
@@ -33,14 +33,14 @@ public class AttachableMapper {
                                 .mapSecond(info -> info.getLayers(getLayer(assetInfo.getFirst()))))
                         .filter(assetInfo -> !assetInfo.getSecond().isEmpty())
                         .map(assetInfo -> {
-                            ResourceLocation texture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
-                            textureConsumer.accept(texture);
-                            return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), texture.getPath());
+                            ResourceLocation equipmentTexture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
+                            textureConsumer.accept(new TextureHolder(equipmentTexture));
+                            return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), equipmentTexture.getPath());
                         }))
                 .map(attachable -> {
-                    customAnimation.ifPresent(context -> {
-                        attachable.withAnimation("first_person", context.firstPerson());
-                        attachable.withAnimation("third_person", context.thirdPerson());
+                    geometryContext.animation().ifPresent(animation -> {
+                        attachable.withAnimation("first_person", animation.firstPerson());
+                        attachable.withAnimation("third_person", animation.thirdPerson());
                         attachable.withScript("animate", "first_person", "context.is_first_person == 1.0");
                         attachable.withScript("animate", "third_person", "context.is_first_person == 0.0");
                     });

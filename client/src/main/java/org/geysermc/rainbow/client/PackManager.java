@@ -88,8 +88,8 @@ public final class PackManager {
 
         Set<BedrockItem> bedrockItems = pack.getBedrockItems();
         long attachables = bedrockItems.stream().filter(item -> item.attachable().isPresent()).count();
-        long geometries = bedrockItems.stream().filter(item -> item.geometry().isPresent()).count();
-        long animations = bedrockItems.stream().filter(item -> item.animation().isPresent()).count();
+        long geometries = bedrockItems.stream().filter(item -> item.geometry().geometry().isPresent()).count();
+        long animations = bedrockItems.stream().filter(item -> item.geometry().animation().isPresent()).count();
 
         return """
 -- PACK GENERATION REPORT --

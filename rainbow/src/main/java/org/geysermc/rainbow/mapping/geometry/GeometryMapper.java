@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.block.model.SimpleUnbakedGeometry;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedGeometry;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import org.geysermc.rainbow.mixin.FaceBakeryAccessor;
 import org.geysermc.rainbow.pack.geometry.BedrockGeometry;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -19,7 +19,7 @@ import java.util.Optional;
 public class GeometryMapper {
     private static final Vector3fc CENTRE_OFFSET = new Vector3f(8.0F, 0.0F, 8.0F);
 
-    public static Optional<BedrockGeometryContext> mapGeometry(String identifier, String boneName, ResolvedModel model, ResourceLocation texture) {
+    public static Optional<BedrockGeometry> mapGeometry(String identifier, String boneName, ResolvedModel model, StitchedTextures textures) {
         UnbakedGeometry top = model.getTopGeometry();
         if (top == UnbakedGeometry.EMPTY) {
             return Optional.empty();
@@ -31,9 +31,8 @@ public class GeometryMapper {
         builder.withVisibleBoundsHeight(4.0F);
         builder.withVisibleBoundsOffset(new Vector3f(0.0F, 0.75F, 0.0F));
 
-        // TODO proper texture size
-        builder.withTextureWidth(16);
-        builder.withTextureHeight(16);
+        builder.withTextureWidth(textures.width());
+        builder.withTextureHeight(textures.height());
 
         BedrockGeometry.Bone.Builder bone = BedrockGeometry.bone(boneName);
 
@@ -43,7 +42,7 @@ public class GeometryMapper {
         SimpleUnbakedGeometry geometry = (SimpleUnbakedGeometry) top;
         for (BlockElement element : geometry.elements()) {
             // TODO the origin here is wrong, some models seem to be mirrored weirdly in blockbench
-            BedrockGeometry.Cube cube = mapBlockElement(element).build();
+            BedrockGeometry.Cube cube = mapBlockElement(element, textures).build();
             bone.withCube(cube);
             min.min(cube.origin());
             max.max(cube.origin().add(cube.size(), new Vector3f()));
@@ -55,35 +54,36 @@ public class GeometryMapper {
 
         // Bind to the bone of the current item slot
         bone.withBinding("q.item_slot_to_bone_name(context.item_slot)");
-        return Optional.of(new BedrockGeometryContext(builder.withBone(bone).build(), texture));
+        return Optional.of(builder.withBone(bone).build());
     }
 
-    private static BedrockGeometry.Cube.Builder mapBlockElement(BlockElement element) {
+    private static BedrockGeometry.Cube.Builder mapBlockElement(BlockElement element, StitchedTextures textures) {
         // The centre of the model is back by 8 in the X and Z direction on Java, so move the origin of the cube and the pivot like that
         BedrockGeometry.Cube.Builder builder = BedrockGeometry.cube(element.from().sub(CENTRE_OFFSET, new Vector3f()), element.to().sub(element.from(), new Vector3f()));
 
         for (Map.Entry<Direction, BlockElementFace> faceEntry : element.faces().entrySet()) {
-            // TODO texture key
             Direction direction = faceEntry.getKey();
             BlockElementFace face = faceEntry.getValue();
 
             Vector2f uvOrigin;
             Vector2f uvSize;
             BlockElementFace.UVs uvs = face.uvs();
-            if (uvs != null) {
-                // Up and down faces are special
-                if (direction.getAxis() == Direction.Axis.Y) {
-                    uvOrigin = new Vector2f(uvs.maxU(), uvs.maxV());
-                    uvSize = new Vector2f(uvs.minU() - uvs.maxU(), uvs.minV() - uvs.maxV());
-                } else {
-                    uvOrigin = new Vector2f(uvs.minU(), uvs.minV());
-                    uvSize = new Vector2f(uvs.maxU() - uvs.minU(), uvs.maxV() - uvs.minV());
-                }
-            } else {
-                uvOrigin = new Vector2f();
-                uvSize = new Vector2f();
+            if (uvs == null) {
+                // Java defaults to a set of UV values determined by the position of the face if no UV values were specified
+                uvs = FaceBakeryAccessor.invokeDefaultFaceUV(element.from(), element.to(), direction);
             }
 
+            // Up and down faces are special and have their UVs flipped
+            if (direction.getAxis() == Direction.Axis.Y) {
+                uvOrigin = new Vector2f(uvs.maxU(), uvs.maxV());
+                uvSize = new Vector2f(uvs.minU() - uvs.maxU(), uvs.minV() - uvs.maxV());
+            } else {
+                uvOrigin = new Vector2f(uvs.minU(), uvs.minV());
+                uvSize = new Vector2f(uvs.maxU() - uvs.minU(), uvs.maxV() - uvs.minV());
+            }
+
+            // If the texture was stitched (which it should have been, unless it doesn't exist), offset the UVs by the texture's starting UV
+            textures.getSprite(face.texture()).ifPresent(sprite -> uvOrigin.add(sprite.getX(), sprite.getY()));
             builder.withFace(direction, uvOrigin, uvSize, face.rotation());
         }
 

@@ -21,8 +21,6 @@ import net.minecraft.client.renderer.item.properties.select.Charge;
 import net.minecraft.client.renderer.item.properties.select.ContextDimension;
 import net.minecraft.client.renderer.item.properties.select.DisplayContext;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
-import net.minecraft.client.resources.model.Material;
-import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -37,11 +35,8 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.ArrayUtils;
-import org.geysermc.rainbow.mapping.animation.AnimationMapper;
-import org.geysermc.rainbow.mapping.animation.BedrockAnimationContext;
 import org.geysermc.rainbow.mapping.attachable.AttachableMapper;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
-import org.geysermc.rainbow.mapping.geometry.GeometryMapper;
 import org.geysermc.rainbow.definition.GeyserBaseDefinition;
 import org.geysermc.rainbow.definition.GeyserItemDefinition;
 import org.geysermc.rainbow.definition.GeyserLegacyDefinition;
@@ -52,9 +47,7 @@ import org.geysermc.rainbow.definition.predicate.GeyserPredicate;
 import org.geysermc.rainbow.definition.predicate.GeyserRangeDispatchPredicate;
 import org.geysermc.rainbow.mixin.LateBoundIdMapperAccessor;
 import org.geysermc.rainbow.mixin.RangeSelectItemModelAccessor;
-import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
 import org.geysermc.rainbow.pack.BedrockItem;
-import org.geysermc.rainbow.pack.BedrockTextures;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,9 +55,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class BedrockItemMapper {
-    private static final List<ResourceLocation> HANDHELD_MODELS = Stream.of("item/handheld", "item/handheld_rod", "item/handheld_mace")
-            .map(ResourceLocation::withDefaultNamespace)
-            .toList();
     private static final List<ResourceLocation> TRIMMABLE_ARMOR_TAGS = Stream.of("is_armor", "trimmable_armors")
             .map(ResourceLocation::withDefaultNamespace)
             .toList();
@@ -117,7 +107,7 @@ public class BedrockItemMapper {
             case ConditionalItemModel.Unbaked conditional -> mapConditionalModel(conditional, context.child("condition model "));
             case RangeSelectItemModel.Unbaked rangeSelect -> mapRangeSelectModel(rangeSelect, context.child("range select model "));
             case SelectItemModel.Unbaked select -> mapSelectModel(select, context.child("select model "));
-            default -> context.reporter.report(() -> "unsupported item model " + getModelId(model));
+            default -> context.report("unsupported item model " + getModelId(model));
         }
     }
 
@@ -126,10 +116,6 @@ public class BedrockItemMapper {
 
         context.packContext().assetResolver().getResolvedModel(itemModelLocation)
                 .ifPresentOrElse(itemModel -> {
-                    ResolvedModel parentModel = itemModel.parent();
-                    // debugName() returns the resource location of the model as a string
-                    boolean handheld = parentModel != null && HANDHELD_MODELS.contains(ResourceLocation.parse(parentModel.debugName()));
-
                     ResourceLocation bedrockIdentifier;
                     if (itemModelLocation.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
                         bedrockIdentifier = ResourceLocation.fromNamespaceAndPath("geyser_mc", itemModelLocation.getPath());
@@ -137,29 +123,13 @@ public class BedrockItemMapper {
                         bedrockIdentifier = itemModelLocation;
                     }
 
-                    Material layer0Texture = itemModel.getTopTextureSlots().getMaterial("layer0");
-                    Optional<ResourceLocation> texture;
-                    Optional<ResolvedModel> customGeometry;
-                    if (layer0Texture != null) {
-                        texture = Optional.of(layer0Texture.texture());
-                        customGeometry = Optional.empty();
-                    } else {
-                        // We can't stitch multiple textures together yet, so we just grab the first one we see
-                        // This will only work properly for models with just one texture
-                        texture = ((TextureSlotsAccessor) itemModel.getTopTextureSlots()).getResolvedValues().values().stream()
-                                .map(Material::texture)
-                                .findAny();
-                        // Unknown texture (doesn't use layer0), so we immediately assume the geometry is custom
-                        // This check should probably be done differently
-                        customGeometry = Optional.of(itemModel);
-                    }
-
-                    texture.ifPresentOrElse(itemTexture -> {
+                    BedrockGeometryContext geometry = BedrockGeometryContext.create(itemModel);
+                    if (context.packContext.reportSuccesses()) {
                         // Not a problem, but just report to get the model printed in the report file
-                        context.reporter.report(() -> "creating mapping for block model " + itemModelLocation);
-                        context.create(bedrockIdentifier, itemTexture, handheld, customGeometry);
-                    }, () -> context.reporter.report(() -> "not mapping block model " + itemModelLocation + " because it has no texture"));
-                }, () -> context.reporter.report(() -> "missing block model " + itemModelLocation));
+                        context.report("creating mapping for block model " + itemModelLocation);
+                    }
+                    context.create(bedrockIdentifier, geometry);
+                }, () -> context.report("missing block model " + itemModelLocation));
     }
 
     private static void mapConditionalModel(ConditionalItemModel.Unbaked model, MappingContext context) {
@@ -176,7 +146,7 @@ public class BedrockItemMapper {
         ItemModel.Unbaked onFalse = model.onFalse();
 
         if (predicateProperty == null) {
-            context.reporter.report(() -> "unsupported conditional model property " + property + ", only mapping on_false");
+            context.report("unsupported conditional model property " + property + ", only mapping on_false");
             mapItem(onFalse, context.child("condition on_false (unsupported property)"));
             return;
         }
@@ -197,7 +167,7 @@ public class BedrockItemMapper {
         };
 
         if (predicateProperty == null) {
-            context.reporter.report(() -> "unsupported range dispatch model property " + property + ", only mapping fallback, if it is present");
+            context.report("unsupported range dispatch model property " + property + ", only mapping fallback, if it is present");
         } else {
             for (RangeSelectItemModel.Entry entry : model.entries()) {
                 mapItem(entry.model(), context.with(new GeyserRangeDispatchPredicate(predicateProperty, entry.threshold(), model.scale()), "threshold " + entry.threshold()));
@@ -223,7 +193,7 @@ public class BedrockItemMapper {
 
         if (dataConstructor == null) {
             if (unbakedSwitch.property() instanceof DisplayContext) {
-                context.reporter.report(() -> "unsupported select model property display_context, only mapping \"gui\" case, if it exists");
+                context.report("unsupported select model property display_context, only mapping \"gui\" case, if it exists");
                 for (SelectItemModel.SwitchCase<?> switchCase : cases) {
                     if (switchCase.values().contains(ItemDisplayContext.GUI)) {
                         mapItem(switchCase.model(), context.child("select GUI display_context case (unsupported property) "));
@@ -231,7 +201,7 @@ public class BedrockItemMapper {
                     }
                 }
             }
-            context.reporter.report(() -> "unsupported select model property " + unbakedSwitch.property() + ", only mapping fallback, if present");
+            context.report("unsupported select model property " + unbakedSwitch.property() + ", only mapping fallback, if present");
             model.fallback().ifPresent(fallback -> mapItem(fallback, context.child("select fallback case (unsupported property) ")));
             return;
         }
@@ -255,17 +225,11 @@ public class BedrockItemMapper {
             return new MappingContext(predicateStack, stack, reporter.forChild(() -> childName), definitionCreator, packContext);
         }
 
-        public void create(ResourceLocation bedrockIdentifier, ResourceLocation texture, boolean displayHandheld,
-                           Optional<ResolvedModel> customModel) {
-            List<ResourceLocation> tags;
-            if (stack.is(ItemTags.TRIMMABLE_ARMOR)) {
-                tags = TRIMMABLE_ARMOR_TAGS;
-            } else {
-                tags = List.of();
-            }
+        public void create(ResourceLocation bedrockIdentifier, BedrockGeometryContext geometry) {
+            List<ResourceLocation> tags = stack.is(ItemTags.TRIMMABLE_ARMOR) ? TRIMMABLE_ARMOR_TAGS : List.of();
 
             GeyserBaseDefinition base = new GeyserBaseDefinition(bedrockIdentifier, Optional.ofNullable(stack.getHoverName().tryCollapseToString()), predicateStack,
-                    new GeyserBaseDefinition.BedrockOptions(Optional.empty(), true, displayHandheld, calculateProtectionValue(stack), tags),
+                    new GeyserBaseDefinition.BedrockOptions(Optional.empty(), true, geometry.handheld(), calculateProtectionValue(stack), tags),
                     stack.getComponentsPatch());
             try {
                 packContext.mappings().map(stack.getItemHolder(), definitionCreator.apply(base));
@@ -274,26 +238,13 @@ public class BedrockItemMapper {
                 return;
             }
 
-            // TODO Should probably get a better way to get geometry texture
-            String safeIdentifier = base.textureName();
-            String bone = "bone";
-            ResourceLocation geometryTexture = texture;
-            Optional<BedrockGeometryContext> bedrockGeometry = customModel.flatMap(model -> GeometryMapper.mapGeometry(safeIdentifier, bone, model, geometryTexture));
-            Optional<BedrockAnimationContext> bedrockAnimation = customModel.map(model -> AnimationMapper.mapAnimation(safeIdentifier, bone, model.getTopTransforms()));
+            // TODO move attachable mapping somewhere else for cleaner code?
+            packContext.itemConsumer().accept(new BedrockItem(bedrockIdentifier, base.textureName(), geometry,
+                    AttachableMapper.mapItem(stack.getComponentsPatch(), bedrockIdentifier, geometry, packContext.assetResolver(), packContext.additionalTextureConsumer())));
+        }
 
-            boolean exportTexture = true;
-            if (customModel.isPresent()) {
-                texture = texture.withPath(path -> path + "_icon");
-                // FIXME Bit of a hack, preferably render geometry at a later stage
-                exportTexture = !packContext.geometryRenderer().render(stack, packContext.paths().packRoot().resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png"));
-                packContext.additionalTextureConsumer().accept(geometryTexture);
-            }
-
-            packContext.itemConsumer().accept(new BedrockItem(bedrockIdentifier, base.textureName(), texture, exportTexture,
-                    AttachableMapper.mapItem(stack.getComponentsPatch(), bedrockIdentifier, bedrockGeometry, bedrockAnimation,
-                            packContext.assetResolver(),
-                            packContext.additionalTextureConsumer()),
-                    bedrockGeometry.map(BedrockGeometryContext::geometry), bedrockAnimation.map(BedrockAnimationContext::animation)));
+        public void report(String problem) {
+            reporter.report(() -> problem);
         }
 
         private static int calculateProtectionValue(ItemStack stack) {

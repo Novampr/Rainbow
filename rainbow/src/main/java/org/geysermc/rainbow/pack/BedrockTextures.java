@@ -33,7 +33,7 @@ public record BedrockTextures(Map<String, String> textures) {
         private final Map<String, String> textures = new HashMap<>();
 
         public Builder withItemTexture(BedrockItem item) {
-            return withTexture(item.textureName(), TEXTURES_FOLDER + item.texture().getPath());
+            return withTexture(item.textureName(), TEXTURES_FOLDER + item.geometry().texture().location().getPath());
         }
 
         public Builder withTexture(String name, String texture) {

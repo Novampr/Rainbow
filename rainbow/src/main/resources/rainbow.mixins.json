@@ -5,10 +5,16 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "LateBoundIdMapperAccessor",
+    "NativeImageAccessor",
     "RangeSelectItemModelAccessor",
+    "SpriteContentsAccessor",
+    "SpriteLoaderAccessor",
     "TextureSlotsAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "mixins": [
+    "FaceBakeryAccessor"
+  ]
 }

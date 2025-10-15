@@ -14,7 +14,16 @@ public class Rainbow {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 
+    // TODO rename remove file
     public static String fileSafeResourceLocation(ResourceLocation location) {
         return location.toString().replace(':', '.').replace('/', '_');
+    }
+
+    public static ResourceLocation decorateResourceLocation(ResourceLocation location, String type, String extension) {
+        return location.withPath(path -> type + "/" + path + "." + extension);
+    }
+
+    public static ResourceLocation decorateTextureLocation(ResourceLocation location) {
+        return decorateResourceLocation(location, "textures", "png");
     }
 }

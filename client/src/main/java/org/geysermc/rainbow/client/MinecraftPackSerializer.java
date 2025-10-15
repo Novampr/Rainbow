@@ -16,7 +16,6 @@ import org.geysermc.rainbow.mapping.PackSerializer;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -24,11 +23,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class MinecraftPackSerializer implements PackSerializer {
     private final HolderLookup.Provider registries;
-    private final ResourceManager resourceManager;
 
     public MinecraftPackSerializer(Minecraft minecraft) {
         registries = Objects.requireNonNull(minecraft.level).registryAccess();
-        resourceManager = minecraft.getResourceManager();
     }
 
     @Override
@@ -44,13 +41,12 @@ public class MinecraftPackSerializer implements PackSerializer {
     }
 
     @Override
-    public CompletableFuture<?> saveTexture(ResourceLocation texture, Path path) {
+    public CompletableFuture<?> saveTexture(byte[] texture, Path path) {
         return CompletableFuture.runAsync(() -> {
-            ResourceLocation texturePath = texture.withPath(p -> "textures/" + p + ".png");
-            try (InputStream inputTexture = resourceManager.open(texturePath)) {
+            try {
                 CodecUtil.ensureDirectoryExists(path.getParent());
                 try (OutputStream outputTexture = new FileOutputStream(path.toFile())) {
-                    IOUtils.copy(inputTexture, outputTexture);
+                    outputTexture.write(texture);
                 }
             } catch (IOException exception) {
                 // TODO log

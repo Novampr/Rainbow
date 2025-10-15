@@ -12,6 +12,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
+import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.image.NativeImageUtil;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
 import org.geysermc.rainbow.mapping.PackContext;
@@ -19,9 +21,11 @@ import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.mapping.geometry.GeometryRenderer;
 import org.geysermc.rainbow.mapping.geometry.NoopGeometryRenderer;
 import org.geysermc.rainbow.definition.GeyserMappings;
+import org.geysermc.rainbow.mapping.geometry.TextureHolder;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,7 +45,7 @@ public class BedrockPack {
 
     private final BedrockTextures.Builder itemTextures = BedrockTextures.builder();
     private final Set<BedrockItem> bedrockItems = new HashSet<>();
-    private final Set<ResourceLocation> texturesToExport = new HashSet<>();
+    private final Set<TextureHolder> texturesToExport = new HashSet<>();
     private final Set<ResourceLocation> modelsMapped = new HashSet<>();
     private final IntSet customModelDataMapped = new IntOpenHashSet();
 
@@ -59,9 +63,7 @@ public class BedrockPack {
         // Not reading existing item mappings/texture atlas for now since that doesn't work all that well yet
         this.context = new PackContext(new GeyserMappings(), paths, item -> {
             itemTextures.withItemTexture(item);
-            if (item.exportTexture()) {
-                texturesToExport.add(item.texture());
-            }
+            texturesToExport.add(item.geometry().texture());
             bedrockItems.add(item);
         }, assetResolver, geometryRenderer, texturesToExport::add, reportSuccesses);
         this.reporter = reporter;
@@ -130,8 +132,27 @@ public class BedrockPack {
             futures.addAll(item.save(serializer, paths.attachables(), paths.geometry(), paths.animation()));
         }
 
-        for (ResourceLocation texture : texturesToExport) {
-            futures.add(serializer.saveTexture(texture, paths.packRoot().resolve(BedrockTextures.TEXTURES_FOLDER + texture.getPath() + ".png")));
+        for (TextureHolder texture : texturesToExport) {
+            ResourceLocation textureLocation = Rainbow.decorateTextureLocation(texture.location());
+            texture.supplier()
+                    .flatMap(image -> {
+                        try {
+                            return Optional.of(NativeImageUtil.writeToByteArray(image.get()));
+                        } catch (IOException exception) {
+                            // TODO log
+                            return Optional.empty();
+                        }
+                    })
+                    .or(() -> {
+                        try (InputStream textureStream = context.assetResolver().openAsset(textureLocation)) {
+                            return Optional.of(textureStream.readAllBytes());
+                        } catch (IOException exception) {
+                            // TODO log
+                            return Optional.empty();
+                        }
+                    })
+                    .map(bytes -> serializer.saveTexture(bytes, paths.packRoot().resolve(textureLocation.getPath())))
+                    .ifPresent(futures::add);
         }
 
         if (paths.zipOutput().isPresent()) {
