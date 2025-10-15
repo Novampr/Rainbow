@@ -264,7 +264,7 @@ public class BedrockItemMapper {
                 tags = List.of();
             }
 
-            GeyserBaseDefinition base = new GeyserBaseDefinition(bedrockIdentifier, Optional.of(stack.getHoverName().getString()), predicateStack,
+            GeyserBaseDefinition base = new GeyserBaseDefinition(bedrockIdentifier, Optional.ofNullable(stack.getHoverName().tryCollapseToString()), predicateStack,
                     new GeyserBaseDefinition.BedrockOptions(Optional.empty(), true, displayHandheld, calculateProtectionValue(stack), tags),
                     stack.getComponentsPatch());
             try {

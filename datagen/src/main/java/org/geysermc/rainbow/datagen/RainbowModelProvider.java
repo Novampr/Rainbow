@@ -120,7 +120,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
                     byte[] textureBytes = inputTexture.readAllBytes();
                     output.writeIfNeeded(path, textureBytes, HashCode.fromBytes(textureBytes));
                 } catch (IOException exception) {
-                    // TODO log
+                    LOGGER.error("Failed to save file to {}", path, exception);
                 }
             }, Util.backgroundExecutor().forName("PackSerializer-saveTexture"));
         }
