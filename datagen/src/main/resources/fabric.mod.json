@@ -3,7 +3,7 @@
   "id": "rainbow-datagen",
   "version": "${version}",
   "name": "Rainbow",
-  "description": "Rainbow is a mod to generate Geyser item mappings and bedrock resourcepacks for use with Geyser's custom item API (v2)",
+  "description": "Rainbow's datagen module",
   "authors": [
     "GeyserMC contributors"
   ],
@@ -22,12 +22,5 @@
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
     "minecraft": "${supported_versions}"
-  },
-  "custom": {
-    "modmenu": {
-      "links": {
-        "modmenu.discord": "https://discord.gg/GeyserMC"
-      }
-    }
   }
 }

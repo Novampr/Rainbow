@@ -62,7 +62,7 @@ jobs:
           appID: ${{ secrets.RELEASE_APP_ID }}
           appPrivateKey: ${{ secrets.RELEASE_APP_PK }}
           files: |
-            rainbow:build/libs/Rainbow.jar
+            rainbow:client/build/libs/Rainbow.jar
           releaseEnabled: false
           saveMetadata: true
           releaseProject: 'rainbow'
