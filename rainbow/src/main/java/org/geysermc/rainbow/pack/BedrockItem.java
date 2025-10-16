@@ -5,6 +5,7 @@ import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.mapping.attachable.AttachableMapper;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
+import org.geysermc.rainbow.mapping.geometry.StitchedGeometry;
 import org.geysermc.rainbow.mapping.geometry.TextureHolder;
 import org.geysermc.rainbow.pack.attachable.BedrockAttachable;
 
@@ -29,8 +30,8 @@ public record BedrockItem(ResourceLocation identifier, String textureName, Bedro
                             return CompletableFuture.allOf(
                                     createdAttachable.map(attachable -> attachable.save(serializer, attachableDirectory)).orElse(noop()),
                                     CompletableFuture.allOf(attachableTextures.stream().map(textureSaver).toArray(CompletableFuture[]::new)),
-                                    stitchedGeometry.map(BedrockGeometryContext.StitchedGeometry::geometry).map(geometry -> geometry.save(serializer, geometryDirectory)).orElse(noop()),
-                                    stitchedGeometry.map(BedrockGeometryContext.StitchedGeometry::stitchedTextures).map(textureSaver).orElse(noop()),
+                                    stitchedGeometry.map(StitchedGeometry::geometry).map(geometry -> geometry.save(serializer, geometryDirectory)).orElse(noop()),
+                                    stitchedGeometry.map(StitchedGeometry::stitchedTextures).map(textureSaver).orElse(noop()),
                                     geometryContext.animation().map(context -> context.animation().save(serializer, animationDirectory, Rainbow.fileSafeResourceLocation(identifier))).orElse(noop())
                             );
                         })

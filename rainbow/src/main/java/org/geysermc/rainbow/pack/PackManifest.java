@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
 import org.geysermc.rainbow.CodecUtil;
+import org.geysermc.rainbow.PackConstants;
 
 import java.util.List;
 import java.util.UUID;
@@ -55,6 +56,11 @@ public record PackManifest(Header header, List<Module> modules) {
         public Module increment() {
             return new Module(name, description, uuid, version.increment());
         }
+    }
+
+    public static PackManifest create(String name, String description, UUID uuid, BedrockVersion version) {
+        return new PackManifest(new PackManifest.Header(name, description, uuid, version, PackConstants.ENGINE_VERSION),
+                List.of(new PackManifest.Module(name, description, uuid, version)));
     }
 }
 

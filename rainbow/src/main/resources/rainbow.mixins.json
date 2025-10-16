@@ -4,6 +4,7 @@
   "package": "org.geysermc.rainbow.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "FaceBakeryAccessor",
     "LateBoundIdMapperAccessor",
     "NativeImageAccessor",
     "RangeSelectItemModelAccessor",
@@ -13,8 +14,5 @@
   ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "mixins": [
-    "FaceBakeryAccessor"
-  ]
+  }
 }

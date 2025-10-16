@@ -58,6 +58,4 @@ public record BedrockGeometryContext(Optional<Supplier<StitchedGeometry>> geomet
 
         return new BedrockGeometryContext(geometry, animation, icon, handheld);
     }
-
-    public record StitchedGeometry(BedrockGeometry geometry, TextureHolder stitchedTextures) {}
 }

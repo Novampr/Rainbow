@@ -81,8 +81,15 @@ public class GeometryMapper {
                 uvSize = new Vector2f(uvs.maxU() - uvs.minU(), uvs.maxV() - uvs.minV());
             }
 
-            // If the texture was stitched (which it should have been, unless it doesn't exist), offset the UVs by the texture's starting UV
-            textures.getSprite(face.texture()).ifPresent(sprite -> uvOrigin.add(sprite.getX(), sprite.getY()));
+            // If the texture was stitched (which it should have been, unless it doesn't exist), s UV values on Java are always in the [0;16] range, adjust the values properly to the texture size,
+            // and offset the UVs by the texture's starting UV
+            textures.getSprite(face.texture()).ifPresent(sprite -> {
+                float widthMultiplier = sprite.contents().width() / 16.0F;
+                float heightMultiplier = sprite.contents().height() / 16.0F;
+                uvOrigin.mul(widthMultiplier, heightMultiplier);
+                uvSize.mul(widthMultiplier, heightMultiplier);
+                uvOrigin.add(sprite.getX(), sprite.getY());
+            });
             builder.withFace(direction, uvOrigin, uvSize, face.rotation());
         }
 

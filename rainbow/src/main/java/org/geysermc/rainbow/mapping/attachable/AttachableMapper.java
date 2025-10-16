@@ -10,6 +10,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
+import org.geysermc.rainbow.mapping.geometry.StitchedGeometry;
 import org.geysermc.rainbow.mapping.geometry.TextureHolder;
 import org.geysermc.rainbow.pack.attachable.BedrockAttachable;
 
@@ -23,8 +24,7 @@ public class AttachableMapper {
         // Crazy optional statement
         // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
         return (bedrockIdentifier, stitchedGeometry, textureConsumer) -> stitchedGeometry
-                .map(BedrockGeometryContext.StitchedGeometry::geometry)
-                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.definitions().getFirst(), geometryContext.icon().location().getPath()))
+                .map(stitched -> BedrockAttachable.geometry(bedrockIdentifier, stitched.geometry().definitions().getFirst(), stitched.stitchedTextures().location().getPath()))
                 .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
                         .flatMap(optional -> (Optional<Equippable>) optional)
                         .flatMap(equippable -> equippable.assetId().flatMap(assetResolver::getEquipmentInfo).map(info -> Pair.of(equippable.slot(), info)))
@@ -59,6 +59,6 @@ public class AttachableMapper {
     @FunctionalInterface
     public interface AttachableCreator {
 
-        Optional<BedrockAttachable> create(ResourceLocation bedrockIdentifier, Optional<BedrockGeometryContext.StitchedGeometry> geometry, Consumer<TextureHolder> textureConsumer);
+        Optional<BedrockAttachable> create(ResourceLocation bedrockIdentifier, Optional<StitchedGeometry> geometry, Consumer<TextureHolder> textureConsumer);
     }
 }
