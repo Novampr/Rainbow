@@ -33,12 +33,19 @@ jobs:
         env:
           BUILD_NUMBER: ${{ steps.release-info.outputs.curentRelease }}
 
+      - name: Publish to Maven Repository
+        if: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
+        run: ./gradlew publish
+        env:
+          ORG_GRADLE_PROJECT_geysermcUsername: ${{ vars.DEPLOY_USER }}
+          ORG_GRADLE_PROJECT_geysermcPassword: ${{ secrets.DEPLOY_PASS }}
+
       - name: Archive Artifacts
         uses: GeyserMC/actions/upload-multi-artifact@master
         if: success()
         with:
           artifacts: |
-            rainbow:build/libs/Rainbow.jar
+            rainbow:client/build/libs/Rainbow.jar
 
       - name: Get Version
         if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Rainbow' }}
@@ -69,7 +76,7 @@ jobs:
           privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
           host: ${{ secrets.DOWNLOADS_SERVER_IP }}
           files: |
-            build/libs/Rainbow.jar
+            client/build/libs/Rainbow.jar
           changelog: ${{ steps.metadata.outputs.body }}
 
 #      - name: Publish to Modrinth
@@ -87,4 +94,4 @@ jobs:
           discordWebhook: ${{ secrets.DISCORD_WEBHOOK }}
           status: ${{ job.status }}
           body: ${{ steps.metadata.outputs.body }}
-          includeDownloads: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
+          includeDownloads: ${{ github.ref_name == 'master' }}

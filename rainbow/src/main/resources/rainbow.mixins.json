@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.geysermc.rainbow.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "FaceBakeryAccessor",
+    "LateBoundIdMapperAccessor",
+    "NativeImageAccessor",
+    "RangeSelectItemModelAccessor",
+    "SpriteContentsAccessor",
+    "SpriteLoaderAccessor",
+    "TextureSlotsAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
