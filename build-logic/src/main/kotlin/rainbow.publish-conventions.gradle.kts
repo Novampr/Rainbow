@@ -7,11 +7,11 @@ val archivesBaseName = properties["archives_base_name"]!! as String
 publishing {
     repositories {
         maven {
-            name = "eclipseisoffline"
+            name = "geysermc"
             url = uri(
                 when {
-                    version.toString().endsWith("-SNAPSHOT") -> "https://maven.eclipseisoffline.xyz/snapshots"
-                    else -> "https://maven.eclipseisoffline.xyz/releases"
+                    version.toString().endsWith("-SNAPSHOT") -> "https://repo.opencollab.dev/maven-snapshots"
+                    else -> "https://repo.opencollab.dev/maven-releases"
                 }
             )
             credentials(PasswordCredentials::class)
