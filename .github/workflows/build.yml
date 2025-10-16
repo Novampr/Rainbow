@@ -33,6 +33,13 @@ jobs:
         env:
           BUILD_NUMBER: ${{ steps.release-info.outputs.curentRelease }}
 
+      - name: Publish to Maven Repository
+        if: ${{ success() && github.repository == 'GeyserMC/Rainbow' && github.ref_name == 'master' }}
+        run: ./gradlew publish
+        env:
+          ORG_GRADLE_PROJECT_geysermcUsername: ${{ vars.DEPLOY_USER }}
+          ORG_GRADLE_PROJECT_geysermcPassword: ${{ secrets.DEPLOY_PASS }}
+
       - name: Archive Artifacts
         uses: GeyserMC/actions/upload-multi-artifact@master
         if: success()
