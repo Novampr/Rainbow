@@ -19,14 +19,18 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.equipment.EquipmentAsset;
+import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.pack.BedrockPack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,6 +43,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class RainbowModelProvider extends FabricModelProvider {
+    private static final Logger PROBLEM_LOGGER = LoggerFactory.getLogger(Rainbow.MOD_ID);
+
     private final CompletableFuture<HolderLookup.Provider> registries;
     private final Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos;
     private final Path outputRoot;
@@ -84,7 +90,8 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
     }
 
     protected BedrockPack.Builder createBedrockPack(Path outputRoot, PackSerializer serializer, AssetResolver resolver) {
-        return BedrockPack.builder("rainbow", outputRoot.resolve("geyser_mappings.json"), outputRoot.resolve("pack"), serializer, resolver);
+        return BedrockPack.builder("rainbow", outputRoot.resolve("geyser_mappings.json"), outputRoot.resolve("pack"), serializer, resolver)
+                .withReporter(path -> new ProblemReporter.ScopedCollector(path, PROBLEM_LOGGER));
     }
 
     protected abstract Item getVanillaItem(Item modded);

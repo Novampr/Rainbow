@@ -50,10 +50,10 @@ public class BedrockPack {
     private final IntSet customModelDataMapped = new IntOpenHashSet();
 
     private final PackContext context;
-    private final ProblemReporter.Collector reporter;
+    private final ProblemReporter reporter;
 
     public BedrockPack(String name, PackManifest manifest, PackPaths paths, PackSerializer serializer, AssetResolver assetResolver,
-                       Optional<GeometryRenderer> geometryRenderer, ProblemReporter.Collector reporter,
+                       Optional<GeometryRenderer> geometryRenderer, ProblemReporter reporter,
                        boolean reportSuccesses) {
         this.name = name;
         this.manifest = manifest;
@@ -163,6 +163,12 @@ public class BedrockPack {
             }
         }
 
+        if (reporter instanceof AutoCloseable closeable) {
+            try {
+                closeable.close();
+            } catch (Exception ignored) {}
+        }
+
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 
@@ -178,7 +184,7 @@ public class BedrockPack {
         return itemTextures.build().size();
     }
 
-    public ProblemReporter.Collector getReporter() {
+    public ProblemReporter getReporter() {
         return reporter;
     }
 
@@ -207,14 +213,14 @@ public class BedrockPack {
         private UnaryOperator<Path> itemAtlasPath = resolve(ITEM_ATLAS_FILE);
         private Path packZipFile = null;
         private GeometryRenderer geometryRenderer = null;
-        private ProblemReporter.Collector reporter;
+        private Function<ProblemReporter.PathElement, ProblemReporter> reporter;
         private boolean reportSuccesses = false;
 
         public Builder(String name, Path mappingsPath, Path packRootPath, PackSerializer packSerializer, AssetResolver assetResolver) {
             this.name = name;
             this.mappingsPath = mappingsPath;
             this.packRootPath = packRootPath;
-            this.reporter = new ProblemReporter.Collector(() -> "Bedrock pack " + name + " ");
+            this.reporter = ProblemReporter.Collector::new;
             this.packSerializer = packSerializer;
             this.assetResolver = assetResolver;
             manifest = defaultManifest(name);
@@ -280,7 +286,7 @@ public class BedrockPack {
             return this;
         }
 
-        public Builder withReporter(ProblemReporter.Collector reporter) {
+        public Builder withReporter(Function<ProblemReporter.PathElement, ProblemReporter> reporter) {
             this.reporter = reporter;
             return this;
         }
@@ -294,7 +300,7 @@ public class BedrockPack {
             PackPaths paths = new PackPaths(mappingsPath, packRootPath, attachablesPath.apply(packRootPath),
                     geometryPath.apply(packRootPath), animationPath.apply(packRootPath), manifestPath.apply(packRootPath),
                     itemAtlasPath.apply(packRootPath), Optional.ofNullable(packZipFile));
-            return new BedrockPack(name, manifest, paths, packSerializer, assetResolver, Optional.ofNullable(geometryRenderer), reporter, reportSuccesses);
+            return new BedrockPack(name, manifest, paths, packSerializer, assetResolver, Optional.ofNullable(geometryRenderer), reporter.apply(() -> "Bedrock pack " + name + " "), reportSuccesses);
         }
 
         private static UnaryOperator<Path> resolve(Path child) {

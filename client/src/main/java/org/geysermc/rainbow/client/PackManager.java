@@ -3,6 +3,7 @@ package org.geysermc.rainbow.client;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.SplashRenderer;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringUtil;
 import org.geysermc.rainbow.CodecUtil;
@@ -81,7 +82,7 @@ public final class PackManager {
     }
 
     private static String createPackSummary(BedrockPack pack) {
-        String problems = pack.getReporter().getTreeReport();
+        String problems = ((ProblemReporter.Collector) pack.getReporter()).getTreeReport();
         if (StringUtil.isBlank(problems)) {
             problems = "Well that's odd... there's nothing here!";
         }
