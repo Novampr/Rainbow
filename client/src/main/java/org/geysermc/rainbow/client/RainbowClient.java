@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.RainbowIO;
 import org.geysermc.rainbow.client.command.CommandSuggestionsArgumentType;
 import org.geysermc.rainbow.client.command.PackGeneratorCommand;
 import org.geysermc.rainbow.client.mapper.PackMapper;
@@ -23,5 +24,7 @@ public class RainbowClient implements ClientModInitializer {
 
         ArgumentTypeRegistry.registerArgumentType(Rainbow.getModdedLocation("command_suggestions"),
                 CommandSuggestionsArgumentType.class, SingletonArgumentInfo.contextFree(CommandSuggestionsArgumentType::new));
+
+        RainbowIO.registerExceptionListener(new RainbowClientIOHandler());
     }
 }
