@@ -48,7 +48,7 @@ public record StitchedTextures(Map<String, TextureAtlasSprite> sprites, Supplier
         // Atlas ID doesn't matter much here, but BLOCKS is the most appropriate
         // Not sure if 1024 should be the max supported texture size, but it seems to work
         SpriteLoader spriteLoader = new SpriteLoader(AtlasIds.BLOCKS, 1024, 16, 16);
-        List<SpriteContents> sprites = textures.map(StitchedTextures::readSpriteContents).toList();
+        List<SpriteContents> sprites = textures.distinct().map(StitchedTextures::readSpriteContents).toList();
         return  ((SpriteLoaderAccessor) spriteLoader).invokeStitch(sprites, 0, Util.backgroundExecutor());
     }
 
@@ -65,7 +65,7 @@ public record StitchedTextures(Map<String, TextureAtlasSprite> sprites, Supplier
     }
 
     private static NativeImage stitchTextureAtlas(SpriteLoader.Preparations preparations) {
-        NativeImage stitched = new NativeImage(preparations.width(), preparations.height(), false);
+        NativeImage stitched = new NativeImage(preparations.width(), preparations.height(), true);
         for (TextureAtlasSprite sprite : preparations.regions().values()) {
             try (SpriteContents contents = sprite.contents()) {
                 ((SpriteContentsAccessor) contents).getOriginalImage().copyRect(stitched, 0, 0,
