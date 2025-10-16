@@ -70,7 +70,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         CompletableFuture<BedrockPack> bedrockPack = ClientPackLoader.openClientResources()
                 .thenCompose(resourceManager -> registries.thenApply(registries -> {
                     try (resourceManager) {
-                        BedrockPack pack = createBedrockPack(outputRoot, new Serializer(output, resourceManager, registries),
+                        BedrockPack pack = createBedrockPack(outputRoot, new Serializer(output, registries),
                                 new DatagenResolver(resourceManager, equipmentInfos, itemInfos, models)).build();
 
                         for (Item item : itemInfos.keySet()) {
@@ -105,7 +105,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         this.models = models;
     }
 
-    private record Serializer(CachedOutput output, ResourceManager resourceManager, HolderLookup.Provider registries) implements PackSerializer {
+    private record Serializer(CachedOutput output, HolderLookup.Provider registries) implements PackSerializer {
 
         @Override
         public <T> CompletableFuture<?> saveJson(Codec<T> codec, T object, Path path) {
@@ -113,12 +113,10 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         }
 
         @Override
-        public CompletableFuture<?> saveTexture(ResourceLocation texture, Path path) {
+        public CompletableFuture<?> saveTexture(byte[] texture, Path path) {
             return CompletableFuture.runAsync(() -> {
-                ResourceLocation texturePath = texture.withPath(p -> "textures/" + p + ".png");
-                try (InputStream inputTexture = resourceManager.open(texturePath)) {
-                    byte[] textureBytes = inputTexture.readAllBytes();
-                    output.writeIfNeeded(path, textureBytes, HashCode.fromBytes(textureBytes));
+                try {
+                    output.writeIfNeeded(path, texture, HashCode.fromBytes(texture));
                 } catch (IOException exception) {
                     LOGGER.error("Failed to save file to {}", path, exception);
                 }
@@ -180,6 +178,11 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         @Override
         public Optional<EquipmentClientInfo> getEquipmentInfo(ResourceKey<EquipmentAsset> key) {
             return Optional.ofNullable(equipmentInfos.get(key));
+        }
+
+        @Override
+        public InputStream openAsset(ResourceLocation location) throws IOException {
+            return resourceManager.open(location);
         }
     }
 }

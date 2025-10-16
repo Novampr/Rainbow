@@ -11,6 +11,8 @@ import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.ResourceLocation;
+import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mixin.SpriteContentsAccessor;
 import org.geysermc.rainbow.mixin.SpriteLoaderAccessor;
 import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
@@ -33,9 +35,9 @@ public record StitchedTextures(Map<String, TextureAtlasSprite> sprites, Supplier
         return Optional.ofNullable(sprites.get(key));
     }
 
-    public static StitchedTextures stitchModelTextures(TextureSlots textures) {
+    public static StitchedTextures stitchModelTextures(TextureSlots textures, PackContext context) {
         Map<String, Material> materials = ((TextureSlotsAccessor) textures).getResolvedValues();
-        SpriteLoader.Preparations preparations = prepareStitching(materials.values().stream().map(Material::texture));
+        SpriteLoader.Preparations preparations = prepareStitching(materials.values().stream().map(Material::texture), context);
 
         Map<String, TextureAtlasSprite> sprites = new HashMap<>();
         for (Map.Entry<String, Material> material : materials.entrySet()) {
@@ -44,19 +46,19 @@ public record StitchedTextures(Map<String, TextureAtlasSprite> sprites, Supplier
         return new StitchedTextures(Map.copyOf(sprites), () -> stitchTextureAtlas(preparations), preparations.width(), preparations.height());
     }
 
-    private static SpriteLoader.Preparations prepareStitching(Stream<ResourceLocation> textures) {
+    private static SpriteLoader.Preparations prepareStitching(Stream<ResourceLocation> textures, PackContext context) {
         // Atlas ID doesn't matter much here, but BLOCKS is the most appropriate
         // Not sure if 1024 should be the max supported texture size, but it seems to work
         SpriteLoader spriteLoader = new SpriteLoader(AtlasIds.BLOCKS, 1024, 16, 16);
-        List<SpriteContents> sprites = textures.distinct().map(StitchedTextures::readSpriteContents).toList();
+        List<SpriteContents> sprites = textures.distinct().map(texture -> readSpriteContents(texture, context)).toList();
         return  ((SpriteLoaderAccessor) spriteLoader).invokeStitch(sprites, 0, Util.backgroundExecutor());
     }
 
-    private static SpriteContents readSpriteContents(ResourceLocation location) {
+    private static SpriteContents readSpriteContents(ResourceLocation location, PackContext context) {
         // TODO decorate path util
         // TODO don't use ResourceManager
         // TODO IO is on main thread here?
-        try (InputStream textureStream = Minecraft.getInstance().getResourceManager().open(location.withPath(path -> "textures/" + path + ".png"))) {
+        try (InputStream textureStream = context.assetResolver().openAsset(Rainbow.decorateTextureLocation(location))) {
             NativeImage texture = NativeImage.read(textureStream);
             return new SpriteContents(location, new FrameSize(texture.getWidth(), texture.getHeight()), texture);
         } catch (IOException exception) {

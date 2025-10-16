@@ -32,6 +32,8 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
             ).apply(instance, BedrockGeometry::new)
     );
 
+    public static BedrockGeometry EMPTY = new BedrockGeometry(FORMAT_VERSION, List.of());
+
     public CompletableFuture<?> save(PackSerializer serializer, Path geometryDirectory) {
         return serializer.saveJson(CODEC, this, geometryDirectory.resolve(definitions.getFirst().info.identifier + ".geo.json"));
     }

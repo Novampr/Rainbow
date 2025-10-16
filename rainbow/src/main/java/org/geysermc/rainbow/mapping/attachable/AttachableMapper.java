@@ -19,12 +19,12 @@ import java.util.function.Consumer;
 
 public class AttachableMapper {
 
-    public static Optional<BedrockAttachable> mapItem(DataComponentPatch components, ResourceLocation bedrockIdentifier, BedrockGeometryContext geometryContext,
-                                                      AssetResolver assetResolver, Consumer<TextureHolder> textureConsumer) {
+    public static AttachableCreator mapItem(AssetResolver assetResolver, BedrockGeometryContext geometryContext, DataComponentPatch components) {
         // Crazy optional statement
         // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
-        return geometryContext.geometry()
-                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.definitions().getFirst(), geometryContext.texture().location().getPath()))
+        return (bedrockIdentifier, stitchedGeometry, textureConsumer) -> stitchedGeometry
+                .map(BedrockGeometryContext.StitchedGeometry::geometry)
+                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry.definitions().getFirst(), geometryContext.icon().location().getPath()))
                 .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
                         .flatMap(optional -> (Optional<Equippable>) optional)
                         .flatMap(equippable -> equippable.assetId().flatMap(assetResolver::getEquipmentInfo).map(info -> Pair.of(equippable.slot(), info)))
@@ -54,5 +54,11 @@ public class AttachableMapper {
 
     private static ResourceLocation getTexture(List<EquipmentClientInfo.Layer> info, EquipmentClientInfo.LayerType layer) {
         return info.getFirst().textureId().withPath(path -> "entity/equipment/" + layer.getSerializedName() + "/" + path);
+    }
+
+    @FunctionalInterface
+    public interface AttachableCreator {
+
+        Optional<BedrockAttachable> create(ResourceLocation bedrockIdentifier, Optional<BedrockGeometryContext.StitchedGeometry> geometry, Consumer<TextureHolder> textureConsumer);
     }
 }

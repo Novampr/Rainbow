@@ -6,7 +6,7 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
-public interface GeyserMapping {
+public interface GeyserMapping extends Comparable<GeyserMapping> {
 
     Codec<GeyserMapping> CODEC = Codec.lazyInitialized(() -> Type.CODEC.dispatch(GeyserMapping::type, Type::codec));
     // Not perfect since we're not checking single definitions in groups without a model... but good enough

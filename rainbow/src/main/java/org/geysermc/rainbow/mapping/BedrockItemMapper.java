@@ -123,7 +123,7 @@ public class BedrockItemMapper {
                         bedrockIdentifier = itemModelLocation;
                     }
 
-                    BedrockGeometryContext geometry = BedrockGeometryContext.create(itemModel);
+                    BedrockGeometryContext geometry = BedrockGeometryContext.create(bedrockIdentifier, itemModel, context.packContext);
                     if (context.packContext.reportSuccesses()) {
                         // Not a problem, but just report to get the model printed in the report file
                         context.report("creating mapping for block model " + itemModelLocation);
@@ -238,9 +238,8 @@ public class BedrockItemMapper {
                 return;
             }
 
-            // TODO move attachable mapping somewhere else for cleaner code?
             packContext.itemConsumer().accept(new BedrockItem(bedrockIdentifier, base.textureName(), geometry,
-                    AttachableMapper.mapItem(stack.getComponentsPatch(), bedrockIdentifier, geometry, packContext.assetResolver(), packContext.additionalTextureConsumer())));
+                    AttachableMapper.mapItem(packContext.assetResolver(), geometry, stack.getComponentsPatch())));
         }
 
         public void report(String problem) {

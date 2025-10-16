@@ -11,6 +11,7 @@ import org.geysermc.rainbow.CodecUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +27,10 @@ public class GeyserMappings {
             ).apply(instance, (format, mappings) -> new GeyserMappings(mappings))
     );
 
-    private final Multimap<Holder<Item>, GeyserMapping> mappings = MultimapBuilder.hashKeys().hashSetValues().build();
+    private final Multimap<Holder<Item>, GeyserMapping> mappings = MultimapBuilder
+            .hashKeys()
+            .<GeyserMapping>treeSetValues(Comparator.comparing(mapping -> mapping))
+            .build();
 
     public GeyserMappings() {}
 

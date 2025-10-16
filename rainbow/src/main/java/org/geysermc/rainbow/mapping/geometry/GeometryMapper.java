@@ -14,15 +14,14 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.util.Map;
-import java.util.Optional;
 
 public class GeometryMapper {
     private static final Vector3fc CENTRE_OFFSET = new Vector3f(8.0F, 0.0F, 8.0F);
 
-    public static Optional<BedrockGeometry> mapGeometry(String identifier, String boneName, ResolvedModel model, StitchedTextures textures) {
+    public static BedrockGeometry mapGeometry(String identifier, String boneName, ResolvedModel model, StitchedTextures textures) {
         UnbakedGeometry top = model.getTopGeometry();
         if (top == UnbakedGeometry.EMPTY) {
-            return Optional.empty();
+            return BedrockGeometry.EMPTY;
         }
 
         BedrockGeometry.Builder builder = BedrockGeometry.builder(identifier);
@@ -54,7 +53,7 @@ public class GeometryMapper {
 
         // Bind to the bone of the current item slot
         bone.withBinding("q.item_slot_to_bone_name(context.item_slot)");
-        return Optional.of(builder.withBone(bone).build());
+        return builder.withBone(bone).build();
     }
 
     private static BedrockGeometry.Cube.Builder mapBlockElement(BlockElement element, StitchedTextures textures) {

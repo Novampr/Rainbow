@@ -8,6 +8,10 @@ import java.util.function.Supplier;
 
 public record TextureHolder(ResourceLocation location, Optional<Supplier<NativeImage>> supplier) {
 
+    public TextureHolder(ResourceLocation location, Supplier<NativeImage> supplier) {
+        this(location, Optional.of(supplier));
+    }
+
     public TextureHolder(ResourceLocation location) {
         this(location, Optional.empty());
     }

@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public class BedrockPack {
@@ -45,7 +46,6 @@ public class BedrockPack {
 
     private final BedrockTextures.Builder itemTextures = BedrockTextures.builder();
     private final Set<BedrockItem> bedrockItems = new HashSet<>();
-    private final Set<TextureHolder> texturesToExport = new HashSet<>();
     private final Set<ResourceLocation> modelsMapped = new HashSet<>();
     private final IntSet customModelDataMapped = new IntOpenHashSet();
 
@@ -63,9 +63,8 @@ public class BedrockPack {
         // Not reading existing item mappings/texture atlas for now since that doesn't work all that well yet
         this.context = new PackContext(new GeyserMappings(), paths, item -> {
             itemTextures.withItemTexture(item);
-            texturesToExport.add(item.geometry().texture());
             bedrockItems.add(item);
-        }, assetResolver, geometryRenderer, texturesToExport::add, reportSuccesses);
+        }, assetResolver, geometryRenderer, reportSuccesses);
         this.reporter = reporter;
     }
 
@@ -128,13 +127,10 @@ public class BedrockPack {
         futures.add(serializer.saveJson(GeyserMappings.CODEC, context.mappings(), paths.mappings()));
         futures.add(serializer.saveJson(PackManifest.CODEC, manifest, paths.manifest()));
         futures.add(serializer.saveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), paths.itemAtlas()));
-        for (BedrockItem item : bedrockItems) {
-            futures.addAll(item.save(serializer, paths.attachables(), paths.geometry(), paths.animation()));
-        }
 
-        for (TextureHolder texture : texturesToExport) {
+        Function<TextureHolder, CompletableFuture<?>> textureSaver = texture -> {
             ResourceLocation textureLocation = Rainbow.decorateTextureLocation(texture.location());
-            texture.supplier()
+            return texture.supplier()
                     .flatMap(image -> {
                         try {
                             return Optional.of(NativeImageUtil.writeToByteArray(image.get()));
@@ -152,7 +148,11 @@ public class BedrockPack {
                         }
                     })
                     .map(bytes -> serializer.saveTexture(bytes, paths.packRoot().resolve(textureLocation.getPath())))
-                    .ifPresent(futures::add);
+                    .orElse(CompletableFuture.completedFuture(null));
+        };
+
+        for (BedrockItem item : bedrockItems) {
+            futures.add(item.save(serializer, paths.attachables(), paths.geometry(), paths.animation(), textureSaver));
         }
 
         if (paths.zipOutput().isPresent()) {
@@ -176,10 +176,6 @@ public class BedrockPack {
 
     public int getItemTextureAtlasSize() {
         return itemTextures.build().size();
-    }
-
-    public int getAdditionalExportedTextures() {
-        return texturesToExport.size();
     }
 
     public ProblemReporter.Collector getReporter() {

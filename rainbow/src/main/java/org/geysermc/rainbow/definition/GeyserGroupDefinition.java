@@ -3,9 +3,12 @@ package org.geysermc.rainbow.definition;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public record GeyserGroupDefinition(Optional<ResourceLocation> model, List<GeyserMapping> definitions) implements GeyserMapping {
@@ -18,7 +21,9 @@ public record GeyserGroupDefinition(Optional<ResourceLocation> model, List<Geyse
     );
 
     public GeyserGroupDefinition with(GeyserMapping mapping) {
-        return new GeyserGroupDefinition(model, Stream.concat(definitions.stream(), Stream.of(mapping)).toList());
+        return new GeyserGroupDefinition(model, Stream.concat(definitions.stream(), Stream.of(mapping))
+                .sorted(Comparator.comparing(Function.identity()))
+                .toList());
     }
 
     public boolean isFor(Optional<ResourceLocation> model) {
@@ -52,5 +57,27 @@ public record GeyserGroupDefinition(Optional<ResourceLocation> model, List<Geyse
     @Override
     public Type type() {
         return Type.GROUP;
+    }
+
+    @Override
+    public int compareTo(@NotNull GeyserMapping other) {
+        if (other instanceof GeyserGroupDefinition(Optional<ResourceLocation> otherModel, List<GeyserMapping> otherDefinitions)) {
+            if (model.isPresent() && otherModel.isPresent()) {
+                return model.get().compareTo(otherModel.get());
+            } else if (model.isPresent()) {
+                return 1; // Groups with models are always greater than groups without
+            } else if (otherModel.isPresent()) {
+                return -1;
+            } else if (definitions.isEmpty() && otherDefinitions.isEmpty()) {
+                return 0;
+            } else if (definitions.isEmpty()) {
+                return -1; // Groups with definitions are always greater than groups without
+            } else if (otherDefinitions.isEmpty()) {
+                return 1;
+            }
+            // Compare the first definition as a last resort
+            return definitions.getFirst().compareTo(otherDefinitions.getFirst());
+        }
+        return 1; // Groups are always greater than individual mappings
     }
 }

@@ -87,9 +87,9 @@ public final class PackManager {
         }
 
         Set<BedrockItem> bedrockItems = pack.getBedrockItems();
-        long attachables = bedrockItems.stream().filter(item -> item.attachable().isPresent()).count();
-        long geometries = bedrockItems.stream().filter(item -> item.geometry().geometry().isPresent()).count();
-        long animations = bedrockItems.stream().filter(item -> item.geometry().animation().isPresent()).count();
+        //long attachables = bedrockItems.stream().filter(item -> item.attachableCreator().isPresent()).count();
+        long geometries = bedrockItems.stream().filter(item -> item.geometryContext().geometry().isPresent()).count();
+        long animations = bedrockItems.stream().filter(item -> item.geometryContext().animation().isPresent()).count();
 
         return """
 -- PACK GENERATION REPORT --
@@ -98,15 +98,15 @@ public final class PackManager {
 Generated pack: %s
 Mappings written: %d
 Item texture atlas size: %d
-Attachables tried to export: %d
+Attachables tried to export: FIXME
 Geometry files tried to export: %d
 Animations tried to export: %d
-Textures tried to export: %d
+Textures tried to export: FIXME
 
 -- MAPPING TREE REPORT --
 %s
 """.formatted(randomSummaryComment(), pack.name(), pack.getMappings(), pack.getItemTextureAtlasSize(),
-                attachables, geometries, animations, pack.getAdditionalExportedTextures(), problems);
+                geometries, animations, problems);
     }
 
     private static String randomSummaryComment() {
