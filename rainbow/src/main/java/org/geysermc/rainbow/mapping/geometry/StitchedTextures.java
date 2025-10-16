@@ -2,7 +2,6 @@ package org.geysermc.rainbow.mapping.geometry;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.Util;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.TextureSlots;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.SpriteLoader;
@@ -12,12 +11,12 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.ResourceLocation;
 import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.RainbowIO;
 import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mixin.SpriteContentsAccessor;
 import org.geysermc.rainbow.mixin.SpriteLoaderAccessor;
 import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
@@ -50,20 +49,20 @@ public record StitchedTextures(Map<String, TextureAtlasSprite> sprites, Supplier
         // Atlas ID doesn't matter much here, but BLOCKS is the most appropriate
         // Not sure if 1024 should be the max supported texture size, but it seems to work
         SpriteLoader spriteLoader = new SpriteLoader(AtlasIds.BLOCKS, 1024, 16, 16);
-        List<SpriteContents> sprites = textures.distinct().map(texture -> readSpriteContents(texture, context)).toList();
+        List<SpriteContents> sprites = textures.distinct()
+                .map(texture -> readSpriteContents(texture, context))
+                .<SpriteContents>mapMulti(Optional::ifPresent)
+                .toList();
         return  ((SpriteLoaderAccessor) spriteLoader).invokeStitch(sprites, 0, Util.backgroundExecutor());
     }
 
-    private static SpriteContents readSpriteContents(ResourceLocation location, PackContext context) {
-        // TODO decorate path util
-        // TODO don't use ResourceManager
-        // TODO IO is on main thread here?
-        try (InputStream textureStream = context.assetResolver().openAsset(Rainbow.decorateTextureLocation(location))) {
-            NativeImage texture = NativeImage.read(textureStream);
-            return new SpriteContents(location, new FrameSize(texture.getWidth(), texture.getHeight()), texture);
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
+    private static Optional<SpriteContents> readSpriteContents(ResourceLocation location, PackContext context) {
+        return RainbowIO.safeIO(() -> {
+            try (InputStream textureStream = context.assetResolver().openAsset(Rainbow.decorateTextureLocation(location))) {
+                NativeImage texture = NativeImage.read(textureStream);
+                return new SpriteContents(location, new FrameSize(texture.getWidth(), texture.getHeight()), texture);
+            }
+        });
     }
 
     private static NativeImage stitchTextureAtlas(SpriteLoader.Preparations preparations) {

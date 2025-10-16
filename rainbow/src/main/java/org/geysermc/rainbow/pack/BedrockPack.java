@@ -13,6 +13,7 @@ import net.minecraft.world.item.component.CustomModelData;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
 import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.RainbowIO;
 import org.geysermc.rainbow.image.NativeImageUtil;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
@@ -131,22 +132,12 @@ public class BedrockPack {
         Function<TextureHolder, CompletableFuture<?>> textureSaver = texture -> {
             ResourceLocation textureLocation = Rainbow.decorateTextureLocation(texture.location());
             return texture.supplier()
-                    .flatMap(image -> {
-                        try {
-                            return Optional.of(NativeImageUtil.writeToByteArray(image.get()));
-                        } catch (IOException exception) {
-                            // TODO log
-                            return Optional.empty();
-                        }
-                    })
-                    .or(() -> {
+                    .flatMap(image -> RainbowIO.safeIO(() -> NativeImageUtil.writeToByteArray(image.get())))
+                    .or(() -> RainbowIO.safeIO(() -> {
                         try (InputStream textureStream = context.assetResolver().openAsset(textureLocation)) {
-                            return Optional.of(textureStream.readAllBytes());
-                        } catch (IOException exception) {
-                            // TODO log
-                            return Optional.empty();
+                            return textureStream.readAllBytes();
                         }
-                    })
+                    }))
                     .map(bytes -> serializer.saveTexture(bytes, paths.packRoot().resolve(textureLocation.getPath())))
                     .orElse(CompletableFuture.completedFuture(null));
         };
@@ -156,11 +147,7 @@ public class BedrockPack {
         }
 
         if (paths.zipOutput().isPresent()) {
-            try {
-                CodecUtil.tryZipDirectory(paths.packRoot(), paths.zipOutput().get());
-            } catch (IOException exception) {
-                // TODO log
-            }
+            RainbowIO.safeIO(() -> CodecUtil.tryZipDirectory(paths.packRoot(), paths.zipOutput().get()));
         }
 
         if (reporter instanceof AutoCloseable closeable) {

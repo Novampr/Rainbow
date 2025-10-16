@@ -8,6 +8,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringUtil;
 import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.RainbowIO;
 import org.geysermc.rainbow.client.mixin.SplashRendererAccessor;
 import org.geysermc.rainbow.client.render.MinecraftGeometryRenderer;
 import org.geysermc.rainbow.pack.BedrockItem;
@@ -24,7 +25,7 @@ import java.util.function.Consumer;
 
 public final class PackManager {
     private static final List<String> PACK_SUMMARY_COMMENTS = List.of("Use the custom item API v2 build!", "bugrock moment", "RORY",
-            "use !!plshelp", "rm -rf --no-preserve-root /*", "welcome to the internet!", "beep beep. boop boop?", "FROG", "it is frog day", "it is cat day!",
+            "use !!plshelp", "*message was deleted*", "welcome to the internet!", "beep beep. boop boop?", "FROG", "it is frog day", "it is cat day!",
             "eclipse will hear about this.", "you must now say the word 'frog' in the #general channel", "You Just Lost The Game", "you are now breathing manually",
             "you are now blinking manually", "you're eligible for a free hug token! <3", "don't mind me!", "hissss", "Gayser and Floodgayte, my favourite plugins.",
             "meow", "we'll be done here soon™", "got anything else to say?", "we're done now!", "this will be fixed by v6053", "expect it to be done within 180 business days!",
@@ -69,11 +70,7 @@ public final class PackManager {
 
     public boolean finish() {
         currentPack.map(pack -> {
-            try {
-                Files.writeString(getExportPath().orElseThrow().resolve(REPORT_FILE), createPackSummary(pack));
-            } catch (IOException exception) {
-                // TODO log
-            }
+            RainbowIO.safeIO(() -> Files.writeString(getExportPath().orElseThrow().resolve(REPORT_FILE), createPackSummary(pack)));
             return pack.save();
         }).ifPresent(CompletableFuture::join);
         boolean wasPresent = currentPack.isPresent();

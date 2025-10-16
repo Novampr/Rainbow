@@ -32,7 +32,7 @@ public record BedrockItem(ResourceLocation identifier, String textureName, Bedro
                                     CompletableFuture.allOf(attachableTextures.stream().map(textureSaver).toArray(CompletableFuture[]::new)),
                                     stitchedGeometry.map(StitchedGeometry::geometry).map(geometry -> geometry.save(serializer, geometryDirectory)).orElse(noop()),
                                     stitchedGeometry.map(StitchedGeometry::stitchedTextures).map(textureSaver).orElse(noop()),
-                                    geometryContext.animation().map(context -> context.animation().save(serializer, animationDirectory, Rainbow.fileSafeResourceLocation(identifier))).orElse(noop())
+                                    geometryContext.animation().map(context -> context.animation().save(serializer, animationDirectory, Rainbow.safeResourceLocation(identifier))).orElse(noop())
                             );
                         })
         );

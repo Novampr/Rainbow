@@ -44,7 +44,7 @@ public record BedrockGeometryContext(Optional<Supplier<StitchedGeometry>> geomet
             // This check should probably be done differently (actually check if the model is 2D or 3D)
 
             ResourceLocation modelLocation = ResourceLocation.parse(model.debugName());
-            String safeIdentifier = Rainbow.fileSafeResourceLocation(bedrockIdentifier);
+            String safeIdentifier = Rainbow.safeResourceLocation(bedrockIdentifier);
 
             geometry = Optional.of(Suppliers.memoize(() -> {
                 StitchedTextures stitchedTextures = StitchedTextures.stitchModelTextures(textures, context);

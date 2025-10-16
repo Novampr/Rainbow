@@ -61,7 +61,7 @@ public record GeyserBaseDefinition(ResourceLocation bedrockIdentifier, Optional<
     }
 
     public String textureName() {
-        return bedrockOptions.icon.orElse(Rainbow.fileSafeResourceLocation(bedrockIdentifier));
+        return bedrockOptions.icon.orElse(Rainbow.safeResourceLocation(bedrockIdentifier));
     }
 
     public record BedrockOptions(Optional<String> icon, boolean allowOffhand, boolean displayHandheld, int protectionValue, List<ResourceLocation> tags) {

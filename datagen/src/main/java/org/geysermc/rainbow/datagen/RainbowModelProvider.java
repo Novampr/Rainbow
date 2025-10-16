@@ -23,6 +23,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import org.geysermc.rainbow.Rainbow;
+import org.geysermc.rainbow.RainbowIO;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.pack.BedrockPack;
@@ -125,7 +126,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
                 try {
                     output.writeIfNeeded(path, texture, HashCode.fromBytes(texture));
                 } catch (IOException exception) {
-                    LOGGER.error("Failed to save file to {}", path, exception);
+                    LOGGER.error("Failed to save texture to {}", path, exception);
                 }
             }, Util.backgroundExecutor().forName("PackSerializer-saveTexture"));
         }
@@ -153,12 +154,11 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         public Optional<ResolvedModel> getResolvedModel(ResourceLocation location) {
             return resolvedModelCache.computeIfAbsent(location, key -> Optional.ofNullable(models.get(location))
                     .map(instance -> BlockModel.fromStream(new StringReader(instance.get().toString())))
-                    .or(() -> {
+                    .or(() -> RainbowIO.safeIO(() -> {
                         try (BufferedReader reader = resourceManager.openAsReader(location.withPrefix("models/").withSuffix(".json"))) {
-                            return Optional.of(BlockModel.fromStream(reader));
-                        } catch (IOException ignored) {}
-                        return Optional.empty();
-                    })
+                            return BlockModel.fromStream(reader);
+                        }
+                    }))
                     .map(model -> new ResolvedModel() {
                         @Override
                         public @NotNull UnbakedModel wrapped() {
