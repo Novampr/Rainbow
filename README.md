@@ -4,7 +4,7 @@
 [![Discord](https://img.shields.io/discord/613163671870242838.svg?color=%237289da&label=discord)](https://discord.gg/geysermc)
 
 Rainbow is a client-side Minecraft mod for the Fabric modloader to generate Geyser item mappings and bedrock resourcepacks
-for use with Geyser's [custom item API (v2)](https://github.com/geyserMC/geyser/pull/5189). Rainbow is available for Minecraft 1.21.7 and 1.21.8.
+for use with Geyser's [custom item API (v2)](https://github.com/geyserMC/geyser/pull/5189). Rainbow is available for Minecraft 1.21.9 and 1.21.10.
 
 Rainbow is currently experimental and capable of the following:
 
