@@ -19,7 +19,6 @@ import org.geysermc.rainbow.mapping.BedrockItemMapper;
 import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.mapping.geometry.GeometryRenderer;
-import org.geysermc.rainbow.mapping.geometry.NoopGeometryRenderer;
 import org.geysermc.rainbow.definition.GeyserMappings;
 import org.geysermc.rainbow.mapping.geometry.TextureHolder;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public class BedrockPack {
@@ -53,7 +53,7 @@ public class BedrockPack {
     private final ProblemReporter.Collector reporter;
 
     public BedrockPack(String name, PackManifest manifest, PackPaths paths, PackSerializer serializer, AssetResolver assetResolver,
-                       GeometryRenderer geometryRenderer, ProblemReporter.Collector reporter,
+                       Optional<GeometryRenderer> geometryRenderer, ProblemReporter.Collector reporter,
                        boolean reportSuccesses) {
         this.name = name;
         this.manifest = manifest;
@@ -206,7 +206,7 @@ public class BedrockPack {
         private UnaryOperator<Path> manifestPath = resolve(MANIFEST_FILE);
         private UnaryOperator<Path> itemAtlasPath = resolve(ITEM_ATLAS_FILE);
         private Path packZipFile = null;
-        private GeometryRenderer geometryRenderer = NoopGeometryRenderer.INSTANCE;
+        private GeometryRenderer geometryRenderer = null;
         private ProblemReporter.Collector reporter;
         private boolean reportSuccesses = false;
 
@@ -294,7 +294,7 @@ public class BedrockPack {
             PackPaths paths = new PackPaths(mappingsPath, packRootPath, attachablesPath.apply(packRootPath),
                     geometryPath.apply(packRootPath), animationPath.apply(packRootPath), manifestPath.apply(packRootPath),
                     itemAtlasPath.apply(packRootPath), Optional.ofNullable(packZipFile));
-            return new BedrockPack(name, manifest, paths, packSerializer, assetResolver, geometryRenderer, reporter, reportSuccesses);
+            return new BedrockPack(name, manifest, paths, packSerializer, assetResolver, Optional.ofNullable(geometryRenderer), reporter, reportSuccesses);
         }
 
         private static UnaryOperator<Path> resolve(Path child) {

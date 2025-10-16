@@ -1,10 +1,9 @@
 package org.geysermc.rainbow.mapping.geometry;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.world.item.ItemStack;
-
-import java.nio.file.Path;
 
 public interface GeometryRenderer {
 
-    boolean render(ItemStack stack, Path path);
+    NativeImage render(ItemStack stack);
 }

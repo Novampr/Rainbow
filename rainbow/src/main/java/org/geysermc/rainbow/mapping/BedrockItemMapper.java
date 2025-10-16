@@ -123,7 +123,7 @@ public class BedrockItemMapper {
                         bedrockIdentifier = itemModelLocation;
                     }
 
-                    BedrockGeometryContext geometry = BedrockGeometryContext.create(bedrockIdentifier, itemModel, context.packContext);
+                    BedrockGeometryContext geometry = BedrockGeometryContext.create(bedrockIdentifier, context.stack, itemModel, context.packContext);
                     if (context.packContext.reportSuccesses()) {
                         // Not a problem, but just report to get the model printed in the report file
                         context.report("creating mapping for block model " + itemModelLocation);

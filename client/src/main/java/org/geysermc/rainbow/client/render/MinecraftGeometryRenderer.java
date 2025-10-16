@@ -14,13 +14,10 @@ import net.minecraft.client.gui.render.state.pip.OversizedItemRenderState;
 import net.minecraft.client.renderer.item.TrackingItemStackRenderState;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.mapping.geometry.GeometryRenderer;
 import org.geysermc.rainbow.client.mixin.PictureInPictureRendererAccessor;
 import org.joml.Matrix3x2fStack;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Objects;
 
 // TODO maybe just use this even for normal 2D items, not sure, could be useful for composite models and stuff
@@ -29,7 +26,7 @@ public class MinecraftGeometryRenderer implements GeometryRenderer {
     public static final MinecraftGeometryRenderer INSTANCE = new MinecraftGeometryRenderer();
 
     @Override
-    public boolean render(ItemStack stack, Path path) {
+    public NativeImage render(ItemStack stack) {
         TrackingItemStackRenderState itemRenderState = new TrackingItemStackRenderState();
         Minecraft.getInstance().getItemModelResolver().updateForTopItem(itemRenderState, stack, ItemDisplayContext.GUI, null, null, 0);
         itemRenderState.setOversizedInGui(true);
@@ -43,13 +40,12 @@ public class MinecraftGeometryRenderer implements GeometryRenderer {
             //noinspection DataFlowIssue
             ((PictureInPictureCopyRenderer) itemRenderer).rainbow$allowTextureCopy();
             itemRenderer.prepare(oversizedRenderState, new GuiRenderState(), 4);
-            writeAsPNG(path, ((PictureInPictureRendererAccessor) itemRenderer).getTexture());
+            return writeToImage(((PictureInPictureRendererAccessor) itemRenderer).getTexture());
         }
-        return true;
     }
 
-    // Simplified TextureUtil#writeAsPNG with some modifications to flip the image and just generate it at full size
-    private static void writeAsPNG(Path path, GpuTexture texture) {
+    // Simplified TextureUtil#writeAsPNG with some modifications to just write to a NativeImage, flip the image and just generate it at full size
+    private static NativeImage writeToImage(GpuTexture texture) {
         RenderSystem.assertOnRenderThread();
         int width = texture.getWidth(0);
         int height = texture.getHeight(0);
@@ -58,25 +54,21 @@ public class MinecraftGeometryRenderer implements GeometryRenderer {
         GpuBuffer buffer = RenderSystem.getDevice().createBuffer(() -> "Texture output buffer", GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_MAP_READ, bufferSize);
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
+        NativeImage image = new NativeImage(width, height, false);
         Runnable writer = () -> {
             try (GpuBuffer.MappedView mappedView = commandEncoder.mapBuffer(buffer, true, false)) {
-                try (NativeImage nativeImage = new NativeImage(width, height, false)) {
-                    for (int y = 0; y < height; y++) {
-                        for (int x = 0; x < width; x++) {
-                            int colour = mappedView.data().getInt((x + y * width) * texture.getFormat().pixelSize());
-                            nativeImage.setPixelABGR(x, height - y - 1, colour);
-                        }
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        int colour = mappedView.data().getInt((x + y * width) * texture.getFormat().pixelSize());
+                        image.setPixelABGR(x, height - y - 1, colour);
                     }
-
-                    CodecUtil.ensureDirectoryExists(path.getParent());
-                    nativeImage.writeToFile(path);
-                } catch (IOException var19) {
-                    // TODO
                 }
             }
 
             buffer.close();
         };
         commandEncoder.copyTextureToBuffer(texture, buffer, 0, writer, 0);
+
+        return image;
     }
 }

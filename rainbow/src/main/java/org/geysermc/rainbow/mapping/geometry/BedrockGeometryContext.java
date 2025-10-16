@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.block.model.TextureSlots;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mapping.animation.AnimationMapper;
@@ -23,7 +24,7 @@ public record BedrockGeometryContext(Optional<Supplier<StitchedGeometry>> geomet
             .map(ResourceLocation::withDefaultNamespace)
             .toList();
 
-    public static BedrockGeometryContext create(ResourceLocation bedrockIdentifier, ResolvedModel model, PackContext context) {
+    public static BedrockGeometryContext create(ResourceLocation bedrockIdentifier, ItemStack stackToRender, ResolvedModel model, PackContext context) {
         ResolvedModel parentModel = model.parent();
         // debugName() returns the resource location of the model as a string
         boolean handheld = parentModel != null && HANDHELD_MODELS.contains(ResourceLocation.parse(parentModel.debugName()));
@@ -52,7 +53,7 @@ public record BedrockGeometryContext(Optional<Supplier<StitchedGeometry>> geomet
             }));
 
             animation = Optional.of(AnimationMapper.mapAnimation(safeIdentifier, "bone", model.getTopTransforms()));
-            icon = new TextureHolder(modelLocation); // TODO
+            icon = new TextureHolder(modelLocation, context.geometryRenderer().map(renderer -> () -> renderer.render(stackToRender)));
         }
 
         return new BedrockGeometryContext(geometry, animation, icon, handheld);

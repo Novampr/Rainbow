@@ -20,19 +20,21 @@ public record BedrockItem(ResourceLocation identifier, String textureName, Bedro
 
     public CompletableFuture<?> save(PackSerializer serializer, Path attachableDirectory, Path geometryDirectory, Path animationDirectory,
                                      Function<TextureHolder, CompletableFuture<?>> textureSaver) {
-        return CompletableFuture.supplyAsync(() -> geometryContext.geometry().map(Supplier::get))
-                .thenCompose(stitchedGeometry -> {
-                    List<TextureHolder> attachableTextures = new ArrayList<>();
-                    Optional<BedrockAttachable> createdAttachable = attachableCreator.create(identifier, stitchedGeometry, attachableTextures::add);
-                    return CompletableFuture.allOf(
-                            textureSaver.apply(geometryContext.icon()),
-                            createdAttachable.map(attachable -> attachable.save(serializer, attachableDirectory)).orElse(noop()),
-                            CompletableFuture.allOf(attachableTextures.stream().map(textureSaver).toArray(CompletableFuture[]::new)),
-                            stitchedGeometry.map(BedrockGeometryContext.StitchedGeometry::geometry).map(geometry -> geometry.save(serializer, geometryDirectory)).orElse(noop()),
-                            stitchedGeometry.map(BedrockGeometryContext.StitchedGeometry::stitchedTextures).map(textureSaver).orElse(noop()),
-                            geometryContext.animation().map(context -> context.animation().save(serializer, animationDirectory, Rainbow.fileSafeResourceLocation(identifier))).orElse(noop())
-                    );
-                });
+        return CompletableFuture.allOf(
+                textureSaver.apply(geometryContext.icon()),
+                CompletableFuture.supplyAsync(() -> geometryContext.geometry().map(Supplier::get))
+                        .thenCompose(stitchedGeometry -> {
+                            List<TextureHolder> attachableTextures = new ArrayList<>();
+                            Optional<BedrockAttachable> createdAttachable = attachableCreator.create(identifier, stitchedGeometry, attachableTextures::add);
+                            return CompletableFuture.allOf(
+                                    createdAttachable.map(attachable -> attachable.save(serializer, attachableDirectory)).orElse(noop()),
+                                    CompletableFuture.allOf(attachableTextures.stream().map(textureSaver).toArray(CompletableFuture[]::new)),
+                                    stitchedGeometry.map(BedrockGeometryContext.StitchedGeometry::geometry).map(geometry -> geometry.save(serializer, geometryDirectory)).orElse(noop()),
+                                    stitchedGeometry.map(BedrockGeometryContext.StitchedGeometry::stitchedTextures).map(textureSaver).orElse(noop()),
+                                    geometryContext.animation().map(context -> context.animation().save(serializer, animationDirectory, Rainbow.fileSafeResourceLocation(identifier))).orElse(noop())
+                            );
+                        })
+        );
     }
 
     private static <T> CompletableFuture<T> noop() {
