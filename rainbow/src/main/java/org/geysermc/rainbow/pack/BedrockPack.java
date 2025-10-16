@@ -14,7 +14,6 @@ import org.geysermc.rainbow.CodecUtil;
 import org.geysermc.rainbow.PackConstants;
 import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.RainbowIO;
-import org.geysermc.rainbow.image.NativeImageUtil;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.BedrockItemMapper;
 import org.geysermc.rainbow.mapping.PackContext;
@@ -24,8 +23,6 @@ import org.geysermc.rainbow.definition.GeyserMappings;
 import org.geysermc.rainbow.mapping.geometry.TextureHolder;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,7 +33,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public class BedrockPack {
@@ -131,13 +127,7 @@ public class BedrockPack {
 
         Function<TextureHolder, CompletableFuture<?>> textureSaver = texture -> {
             ResourceLocation textureLocation = Rainbow.decorateTextureLocation(texture.location());
-            return texture.supplier()
-                    .flatMap(image -> RainbowIO.safeIO(() -> NativeImageUtil.writeToByteArray(image.get())))
-                    .or(() -> RainbowIO.safeIO(() -> {
-                        try (InputStream textureStream = context.assetResolver().openAsset(textureLocation)) {
-                            return textureStream.readAllBytes();
-                        }
-                    }))
+            return texture.load(context.assetResolver(), reporter)
                     .map(bytes -> serializer.saveTexture(bytes, paths.packRoot().resolve(textureLocation.getPath())))
                     .orElse(CompletableFuture.completedFuture(null));
         };

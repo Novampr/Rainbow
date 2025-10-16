@@ -34,7 +34,7 @@ public class AttachableMapper {
                         .filter(assetInfo -> !assetInfo.getSecond().isEmpty())
                         .map(assetInfo -> {
                             ResourceLocation equipmentTexture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
-                            textureConsumer.accept(new TextureHolder(equipmentTexture));
+                            textureConsumer.accept(TextureHolder.createFromResources(equipmentTexture));
                             return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), equipmentTexture.getPath());
                         }))
                 .map(attachable -> {

@@ -8,23 +8,27 @@ import net.minecraft.client.renderer.item.ItemModels;
 import net.minecraft.client.renderer.item.RangeSelectItemModel;
 import net.minecraft.client.renderer.item.SelectItemModel;
 import net.minecraft.client.renderer.item.properties.conditional.Broken;
+import net.minecraft.client.renderer.item.properties.conditional.ConditionalItemModelProperties;
+import net.minecraft.client.renderer.item.properties.conditional.ConditionalItemModelProperty;
 import net.minecraft.client.renderer.item.properties.conditional.CustomModelDataProperty;
 import net.minecraft.client.renderer.item.properties.conditional.Damaged;
 import net.minecraft.client.renderer.item.properties.conditional.FishingRodCast;
 import net.minecraft.client.renderer.item.properties.conditional.HasComponent;
-import net.minecraft.client.renderer.item.properties.conditional.ItemModelPropertyTest;
 import net.minecraft.client.renderer.item.properties.numeric.BundleFullness;
 import net.minecraft.client.renderer.item.properties.numeric.Count;
 import net.minecraft.client.renderer.item.properties.numeric.Damage;
+import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperties;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.client.renderer.item.properties.select.Charge;
 import net.minecraft.client.renderer.item.properties.select.ContextDimension;
 import net.minecraft.client.renderer.item.properties.select.DisplayContext;
+import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperties;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -59,9 +63,10 @@ public class BedrockItemMapper {
             .map(ResourceLocation::withDefaultNamespace)
             .toList();
 
-    private static ResourceLocation getModelId(ItemModel.Unbaked model) {
+    private static <T> ResourceLocation getId(ExtraCodecs.LateBoundIdMapper<ResourceLocation, T> mapper,
+                                              T type) {
         //noinspection unchecked
-        return ((LateBoundIdMapperAccessor<ResourceLocation, ?>) ItemModels.ID_MAPPER).getIdToValue().inverse().get(model.type());
+        return ((LateBoundIdMapperAccessor<ResourceLocation, ?>) mapper).getIdToValue().inverse().get(type);
     }
 
     public static void tryMapStack(ItemStack stack, ResourceLocation modelLocation, ProblemReporter reporter, PackContext context) {
@@ -107,7 +112,7 @@ public class BedrockItemMapper {
             case ConditionalItemModel.Unbaked conditional -> mapConditionalModel(conditional, context.child("condition model "));
             case RangeSelectItemModel.Unbaked rangeSelect -> mapRangeSelectModel(rangeSelect, context.child("range select model "));
             case SelectItemModel.Unbaked select -> mapSelectModel(select, context.child("select model "));
-            default -> context.report("unsupported item model " + getModelId(model));
+            default -> context.report("unsupported item model " + getId(ItemModels.ID_MAPPER, model.type()));
         }
     }
 
@@ -133,7 +138,7 @@ public class BedrockItemMapper {
     }
 
     private static void mapConditionalModel(ConditionalItemModel.Unbaked model, MappingContext context) {
-        ItemModelPropertyTest property = model.property();
+        ConditionalItemModelProperty property = model.property();
         GeyserConditionPredicate.Property predicateProperty = switch (property) {
             case Broken ignored -> GeyserConditionPredicate.BROKEN;
             case Damaged ignored -> GeyserConditionPredicate.DAMAGED;
@@ -146,7 +151,7 @@ public class BedrockItemMapper {
         ItemModel.Unbaked onFalse = model.onFalse();
 
         if (predicateProperty == null) {
-            context.report("unsupported conditional model property " + property + ", only mapping on_false");
+            context.report("unsupported conditional model property " + getId(ConditionalItemModelProperties.ID_MAPPER, property.type()) + ", only mapping on_false");
             mapItem(onFalse, context.child("condition on_false (unsupported property)"));
             return;
         }
@@ -167,7 +172,7 @@ public class BedrockItemMapper {
         };
 
         if (predicateProperty == null) {
-            context.report("unsupported range dispatch model property " + property + ", only mapping fallback, if it is present");
+            context.report("unsupported range dispatch model property " + getId(RangeSelectItemModelProperties.ID_MAPPER, property.type()) + ", only mapping fallback, if it is present");
         } else {
             for (RangeSelectItemModel.Entry entry : model.entries()) {
                 mapItem(entry.model(), context.with(new GeyserRangeDispatchPredicate(predicateProperty, entry.threshold(), model.scale()), "threshold " + entry.threshold()));
@@ -201,7 +206,7 @@ public class BedrockItemMapper {
                     }
                 }
             }
-            context.report("unsupported select model property " + unbakedSwitch.property() + ", only mapping fallback, if present");
+            context.report("unsupported select model property " + getId(SelectItemModelProperties.ID_MAPPER, unbakedSwitch.property().type()) + ", only mapping fallback, if present");
             model.fallback().ifPresent(fallback -> mapItem(fallback, context.child("select fallback case (unsupported property) ")));
             return;
         }

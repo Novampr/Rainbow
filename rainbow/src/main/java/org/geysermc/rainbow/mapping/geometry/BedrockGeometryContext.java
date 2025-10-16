@@ -38,7 +38,7 @@ public record BedrockGeometryContext(Optional<Supplier<StitchedGeometry>> geomet
         if (layer0Texture != null) {
             geometry = Optional.empty();
             animation = Optional.empty();
-            icon = new TextureHolder(layer0Texture.texture());
+            icon = TextureHolder.createFromResources(layer0Texture.texture());
         } else {
             // Unknown model (doesn't use layer0), so we immediately assume the geometry is custom
             // This check should probably be done differently (actually check if the model is 2D or 3D)
@@ -49,11 +49,12 @@ public record BedrockGeometryContext(Optional<Supplier<StitchedGeometry>> geomet
             geometry = Optional.of(Suppliers.memoize(() -> {
                 StitchedTextures stitchedTextures = StitchedTextures.stitchModelTextures(textures, context);
                 BedrockGeometry mappedGeometry = GeometryMapper.mapGeometry(safeIdentifier, "bone", model, stitchedTextures);
-                return new StitchedGeometry(mappedGeometry, new TextureHolder(modelLocation.withSuffix("_stitched"), stitchedTextures.stitched()));
+                return new StitchedGeometry(mappedGeometry, TextureHolder.createProvided(modelLocation.withSuffix("_stitched"), stitchedTextures.stitched()));
             }));
 
             animation = Optional.of(AnimationMapper.mapAnimation(safeIdentifier, "bone", model.getTopTransforms()));
-            icon = new TextureHolder(modelLocation, context.geometryRenderer().map(renderer -> () -> renderer.render(stackToRender)));
+            icon = context.geometryRenderer().isPresent() ? TextureHolder.createProvided(modelLocation, () -> context.geometryRenderer().orElseThrow().render(stackToRender))
+                                                          : TextureHolder.createNonExistent(modelLocation);
         }
 
         return new BedrockGeometryContext(geometry, animation, icon, handheld);

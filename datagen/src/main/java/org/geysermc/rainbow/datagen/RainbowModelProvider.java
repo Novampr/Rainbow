@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.minecraft.Util;
 import net.minecraft.client.data.models.model.ModelInstance;
 import net.minecraft.client.renderer.block.model.BlockModel;
+import net.minecraft.client.renderer.block.model.ItemModelGenerator;
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.client.resources.model.ResolvedModel;
@@ -153,7 +154,13 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         @Override
         public Optional<ResolvedModel> getResolvedModel(ResourceLocation location) {
             return resolvedModelCache.computeIfAbsent(location, key -> Optional.ofNullable(models.get(location))
-                    .map(instance -> BlockModel.fromStream(new StringReader(instance.get().toString())))
+                    .<UnbakedModel>map(instance -> BlockModel.fromStream(new StringReader(instance.get().toString())))
+                    .or(() -> {
+                        if (location.equals(ItemModelGenerator.GENERATED_ITEM_MODEL_ID)) {
+                            return Optional.of(new ItemModelGenerator());
+                        }
+                        return Optional.empty();
+                    })
                     .or(() -> RainbowIO.safeIO(() -> {
                         try (BufferedReader reader = resourceManager.openAsReader(location.withPrefix("models/").withSuffix(".json"))) {
                             return BlockModel.fromStream(reader);
