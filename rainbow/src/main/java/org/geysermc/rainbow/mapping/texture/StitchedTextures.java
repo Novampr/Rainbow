@@ -1,4 +1,4 @@
-package org.geysermc.rainbow.mapping.geometry;
+package org.geysermc.rainbow.mapping.texture;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.Util;

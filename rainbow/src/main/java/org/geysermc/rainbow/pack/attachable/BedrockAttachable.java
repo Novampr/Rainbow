@@ -12,9 +12,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import org.geysermc.rainbow.PackConstants;
 import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.mapping.PackSerializer;
+import org.geysermc.rainbow.mapping.geometry.MappedGeometry;
 import org.geysermc.rainbow.pack.BedrockTextures;
 import org.geysermc.rainbow.pack.BedrockVersion;
-import org.geysermc.rainbow.pack.geometry.BedrockGeometry;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -62,13 +62,13 @@ public record BedrockAttachable(BedrockVersion formatVersion, AttachableInfo inf
                 .withRenderController(VanillaRenderControllers.ARMOR);
     }
 
-    public static BedrockAttachable.Builder geometry(ResourceLocation identifier, BedrockGeometry.GeometryDefinition geometry, String texture) {
+    public static BedrockAttachable.Builder geometry(ResourceLocation identifier, MappedGeometry geometry) {
         return builder(identifier)
                 .withMaterial(DisplaySlot.DEFAULT, VanillaMaterials.ENTITY)
                 .withMaterial(DisplaySlot.ENCHANTED, VanillaMaterials.ENTITY_ALPHATEST_GLINT)
-                .withTexture(DisplaySlot.DEFAULT, texture)
+                .withTexture(DisplaySlot.DEFAULT, geometry.stitchedTextures().location().getPath())
                 .withTexture(DisplaySlot.ENCHANTED, VanillaTextures.ENCHANTED_ITEM_GLINT)
-                .withGeometry(DisplaySlot.DEFAULT, geometry.info().identifier())
+                .withGeometry(DisplaySlot.DEFAULT, geometry.identifier())
                 .withRenderController(VanillaRenderControllers.ITEM_DEFAULT);
     }
 

@@ -1,6 +1,7 @@
 package org.geysermc.rainbow.datagen;
 
 import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
@@ -125,7 +126,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         public CompletableFuture<?> saveTexture(byte[] texture, Path path) {
             return CompletableFuture.runAsync(() -> {
                 try {
-                    output.writeIfNeeded(path, texture, HashCode.fromBytes(texture));
+                    output.writeIfNeeded(path, texture, Hashing.sha1().hashBytes(texture));
                 } catch (IOException exception) {
                     LOGGER.error("Failed to save texture to {}", path, exception);
                 }

@@ -20,7 +20,7 @@ import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mapping.PackSerializer;
 import org.geysermc.rainbow.mapping.geometry.GeometryRenderer;
 import org.geysermc.rainbow.definition.GeyserMappings;
-import org.geysermc.rainbow.mapping.geometry.TextureHolder;
+import org.geysermc.rainbow.mapping.texture.TextureHolder;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -127,9 +127,7 @@ public class BedrockPack {
 
         Function<TextureHolder, CompletableFuture<?>> textureSaver = texture -> {
             ResourceLocation textureLocation = Rainbow.decorateTextureLocation(texture.location());
-            return texture.load(context.assetResolver(), reporter)
-                    .map(bytes -> serializer.saveTexture(bytes, paths.packRoot().resolve(textureLocation.getPath())))
-                    .orElse(CompletableFuture.completedFuture(null));
+            return texture.save(context.assetResolver(), serializer, paths.packRoot().resolve(textureLocation.getPath()), reporter);
         };
 
         for (BedrockItem item : bedrockItems) {

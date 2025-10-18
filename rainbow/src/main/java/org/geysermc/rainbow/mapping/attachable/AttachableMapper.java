@@ -10,8 +10,8 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
-import org.geysermc.rainbow.mapping.geometry.StitchedGeometry;
-import org.geysermc.rainbow.mapping.geometry.TextureHolder;
+import org.geysermc.rainbow.mapping.geometry.MappedGeometry;
+import org.geysermc.rainbow.mapping.texture.TextureHolder;
 import org.geysermc.rainbow.pack.attachable.BedrockAttachable;
 
 import java.util.List;
@@ -23,8 +23,8 @@ public class AttachableMapper {
     public static AttachableCreator mapItem(AssetResolver assetResolver, BedrockGeometryContext geometryContext, DataComponentPatch components) {
         // Crazy optional statement
         // Unfortunately we can't have both equippables and custom models, so we prefer the latter :(
-        return (bedrockIdentifier, stitchedGeometry, textureConsumer) -> stitchedGeometry
-                .map(stitched -> BedrockAttachable.geometry(bedrockIdentifier, stitched.geometry().definitions().getFirst(), stitched.stitchedTextures().location().getPath()))
+        return (bedrockIdentifier, textureConsumer) -> geometryContext.geometry()
+                .map(geometry -> BedrockAttachable.geometry(bedrockIdentifier, geometry))
                 .or(() -> Optional.ofNullable(components.get(DataComponents.EQUIPPABLE))
                         .flatMap(optional -> (Optional<Equippable>) optional)
                         .flatMap(equippable -> equippable.assetId().flatMap(assetResolver::getEquipmentInfo).map(info -> Pair.of(equippable.slot(), info)))
@@ -34,7 +34,7 @@ public class AttachableMapper {
                         .filter(assetInfo -> !assetInfo.getSecond().isEmpty())
                         .map(assetInfo -> {
                             ResourceLocation equipmentTexture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
-                            textureConsumer.accept(TextureHolder.createFromResources(equipmentTexture));
+                            textureConsumer.accept(TextureHolder.createBuiltIn(equipmentTexture));
                             return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), equipmentTexture.getPath());
                         }))
                 .map(attachable -> {
@@ -59,6 +59,6 @@ public class AttachableMapper {
     @FunctionalInterface
     public interface AttachableCreator {
 
-        Optional<BedrockAttachable> create(ResourceLocation bedrockIdentifier, Optional<StitchedGeometry> geometry, Consumer<TextureHolder> textureConsumer);
+        Optional<BedrockAttachable> create(ResourceLocation bedrockIdentifier, Consumer<TextureHolder> textureConsumer);
     }
 }

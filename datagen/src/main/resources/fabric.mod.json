@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "rainbow-datagen",
   "version": "${version}",
-  "name": "Rainbow",
+  "name": "Rainbow-datagen",
   "description": "Rainbow's datagen module",
   "authors": [
     "GeyserMC contributors"

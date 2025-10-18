@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.block.model.SimpleUnbakedGeometry;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedGeometry;
 import net.minecraft.core.Direction;
+import org.geysermc.rainbow.mapping.texture.StitchedTextures;
 import org.geysermc.rainbow.mixin.FaceBakeryAccessor;
 import org.geysermc.rainbow.pack.geometry.BedrockGeometry;
 import org.joml.Vector2f;
