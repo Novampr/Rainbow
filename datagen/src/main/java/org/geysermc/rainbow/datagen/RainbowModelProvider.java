@@ -52,26 +52,44 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
 
     private final CompletableFuture<HolderLookup.Provider> registries;
     private final Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos;
-    private final Path outputRoot;
+    private final String packName;
+    private final Path geyserMappingsPath;
+    private final Path packPath;
+
     private Map<Item, ClientItem> itemInfos;
     private Map<ResourceLocation, ModelInstance> models;
 
     protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries,
-                                Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos, ResourceLocation outputRoot) {
+                                   Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos, String packName,
+                                   ResourceLocation outputRoot, Path geyserMappingsPath, Path packPath) {
         super(output);
         this.registries = registries;
         this.equipmentInfos = equipmentInfos;
-        this.outputRoot = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, outputRoot.getPath())
+        this.packName = packName;
+
+        Path computedOutputRoot = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, outputRoot.getPath())
                 .file(outputRoot, "").getParent();
+        this.geyserMappingsPath = computedOutputRoot.resolve(geyserMappingsPath);
+        this.packPath = computedOutputRoot.resolve(packPath);
     }
 
     protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries,
-                                Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos) {
-        this(output, registries, equipmentInfos, ResourceLocation.withDefaultNamespace("bedrock"));
+                                   Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos, String packName,
+                                   ResourceLocation outputRoot) {
+        this(output, registries, equipmentInfos, packName, outputRoot, Path.of("geyser_mappings.json"), Path.of("pack"));
+    }
+
+    protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries,
+                                Map<ResourceKey<EquipmentAsset>, EquipmentClientInfo> equipmentInfos, String packName) {
+        this(output, registries, equipmentInfos, packName, ResourceLocation.withDefaultNamespace("bedrock"));
+    }
+
+    protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries, String packName) {
+        this(output, registries, Map.of(), packName);
     }
 
     protected RainbowModelProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
-        this(output, registries, Map.of());
+        this(output, registries, Rainbow.MOD_ID + "-generated");
     }
 
     @Override
@@ -81,7 +99,7 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         CompletableFuture<BedrockPack> bedrockPack = ClientPackLoader.openClientResources()
                 .thenCompose(resourceManager -> registries.thenApply(registries -> {
                     try (resourceManager) {
-                        BedrockPack pack = createBedrockPack(outputRoot, new Serializer(output, registries),
+                        BedrockPack pack = createBedrockPack(new Serializer(output, registries),
                                 new DatagenResolver(resourceManager, equipmentInfos, itemInfos, models)).build();
 
                         for (Item item : itemInfos.keySet()) {
@@ -94,8 +112,8 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         return CompletableFuture.allOf(vanillaModels, bedrockPack.thenCompose(BedrockPack::save));
     }
 
-    protected BedrockPack.Builder createBedrockPack(Path outputRoot, PackSerializer serializer, AssetResolver resolver) {
-        return BedrockPack.builder("rainbow", outputRoot.resolve("geyser_mappings.json"), outputRoot.resolve("pack"), serializer, resolver)
+    protected BedrockPack.Builder createBedrockPack(PackSerializer serializer, AssetResolver resolver) {
+        return BedrockPack.builder(packName, geyserMappingsPath, packPath, serializer, resolver)
                 .withReporter(path -> new ProblemReporter.ScopedCollector(path, PROBLEM_LOGGER));
     }
 

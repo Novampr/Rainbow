@@ -12,29 +12,29 @@ import org.geysermc.rainbow.definition.predicate.GeyserPredicate;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 // TODO other keys, etc.
-// TODO sometimes still includes components key when patch before filtering is not empty but after is
 // TODO display name can be a component
 public record GeyserBaseDefinition(ResourceLocation bedrockIdentifier, Optional<String> displayName,
                                    List<GeyserPredicate> predicates, BedrockOptions bedrockOptions, DataComponentPatch components) {
     private static final List<DataComponentType<?>> SUPPORTED_COMPONENTS = List.of(DataComponents.CONSUMABLE, DataComponents.EQUIPPABLE, DataComponents.FOOD,
             DataComponents.MAX_DAMAGE, DataComponents.MAX_STACK_SIZE, DataComponents.USE_COOLDOWN, DataComponents.ENCHANTABLE, DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
 
-    private static final Codec<DataComponentPatch> FILTERED_COMPONENT_MAP_CODEC = DataComponentPatch.CODEC.xmap(Function.identity(), patch -> {
-        DataComponentPatch.Builder filtered = DataComponentPatch.builder();
-        patch.entrySet().stream()
-                .filter(entry -> entry.getValue().isEmpty() || SUPPORTED_COMPONENTS.contains(entry.getKey()))
-                .forEach(entry -> {
-                    if (entry.getValue().isPresent()) {
-                        filtered.set((DataComponentType) entry.getKey(), entry.getValue().orElseThrow());
-                    } else {
-                        filtered.remove(entry.getKey());
-                    }
-                });
-        return filtered.build();
-    });
+    private static final MapCodec<DataComponentPatch> FILTERED_COMPONENT_MAP_CODEC = DataComponentPatch.CODEC.optionalFieldOf("components")
+            .xmap(optional -> optional.orElse(DataComponentPatch.EMPTY), patch -> {
+                DataComponentPatch.Builder filtered = DataComponentPatch.builder();
+                patch.entrySet().stream()
+                        .filter(entry -> entry.getValue().isEmpty() || SUPPORTED_COMPONENTS.contains(entry.getKey()))
+                        .forEach(entry -> {
+                            if (entry.getValue().isPresent()) {
+                                filtered.set((DataComponentType) entry.getKey(), entry.getValue().orElseThrow());
+                            } else {
+                                filtered.remove(entry.getKey());
+                            }
+                        });
+                DataComponentPatch built = filtered.build();
+                return built.isEmpty() ? Optional.empty() : Optional.of(built);
+            });
 
     public static final MapCodec<GeyserBaseDefinition> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
@@ -42,7 +42,7 @@ public record GeyserBaseDefinition(ResourceLocation bedrockIdentifier, Optional<
                     Codec.STRING.optionalFieldOf("display_name").forGetter(GeyserBaseDefinition::displayName),
                     GeyserPredicate.LIST_CODEC.optionalFieldOf("predicate", List.of()).forGetter(GeyserBaseDefinition::predicates),
                     BedrockOptions.CODEC.optionalFieldOf("bedrock_options", BedrockOptions.DEFAULT).forGetter(GeyserBaseDefinition::bedrockOptions),
-                    FILTERED_COMPONENT_MAP_CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(GeyserBaseDefinition::components)
+                    FILTERED_COMPONENT_MAP_CODEC.forGetter(GeyserBaseDefinition::components)
             ).apply(instance, GeyserBaseDefinition::new)
     );
 

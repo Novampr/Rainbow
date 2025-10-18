@@ -37,7 +37,7 @@ import java.util.function.UnaryOperator;
 
 public class BedrockPack {
     private final String name;
-    private final PackManifest manifest;
+    private final Optional<PackManifest> manifest;
     private final PackPaths paths;
     private final PackSerializer serializer;
 
@@ -49,7 +49,7 @@ public class BedrockPack {
     private final PackContext context;
     private final ProblemReporter reporter;
 
-    public BedrockPack(String name, PackManifest manifest, PackPaths paths, PackSerializer serializer, AssetResolver assetResolver,
+    public BedrockPack(String name, Optional<PackManifest> manifest, PackPaths paths, PackSerializer serializer, AssetResolver assetResolver,
                        Optional<GeometryRenderer> geometryRenderer, ProblemReporter reporter,
                        boolean reportSuccesses) {
         this.name = name;
@@ -122,7 +122,7 @@ public class BedrockPack {
         List<CompletableFuture<?>> futures = new ArrayList<>();
 
         futures.add(serializer.saveJson(GeyserMappings.CODEC, context.mappings(), paths.mappings()));
-        futures.add(serializer.saveJson(PackManifest.CODEC, manifest, paths.manifest()));
+        manifest.ifPresent(manifest -> futures.add(serializer.saveJson(PackManifest.CODEC, manifest, paths.manifest())));
         futures.add(serializer.saveJson(BedrockTextureAtlas.CODEC, BedrockTextureAtlas.itemAtlas(name, itemTextures), paths.itemAtlas()));
 
         Function<TextureHolder, CompletableFuture<?>> textureSaver = texture -> {
@@ -275,7 +275,8 @@ public class BedrockPack {
             PackPaths paths = new PackPaths(mappingsPath, packRootPath, attachablesPath.apply(packRootPath),
                     geometryPath.apply(packRootPath), animationPath.apply(packRootPath), manifestPath.apply(packRootPath),
                     itemAtlasPath.apply(packRootPath), Optional.ofNullable(packZipFile));
-            return new BedrockPack(name, manifest, paths, packSerializer, assetResolver, Optional.ofNullable(geometryRenderer), reporter.apply(() -> "Bedrock pack " + name + " "), reportSuccesses);
+            return new BedrockPack(name, Optional.ofNullable(manifest), paths, packSerializer, assetResolver, Optional.ofNullable(geometryRenderer),
+                    reporter.apply(() -> "Bedrock pack " + name + " "), reportSuccesses);
         }
 
         private static UnaryOperator<Path> resolve(Path child) {
