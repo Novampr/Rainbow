@@ -2,6 +2,7 @@ package org.geysermc.rainbow.pack.geometry;
 
 import com.mojang.math.Quadrant;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Direction;
 import org.geysermc.rainbow.CodecUtil;
@@ -141,8 +142,8 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                         Codec.STRING.fieldOf("name").forGetter(Bone::name),
                         Codec.STRING.optionalFieldOf("parent").forGetter(Bone::parent),
                         Codec.STRING.optionalFieldOf("binding").forGetter(Bone::binding),
-                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Bone::pivot),
-                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Bone::rotation),
+                        defaultToZeroCodec("pivot").forGetter(Bone::pivot),
+                        defaultToZeroCodec("rotation").forGetter(Bone::rotation),
                         Codec.BOOL.optionalFieldOf("mirror", false).forGetter(Bone::mirror),
                         Codec.FLOAT.optionalFieldOf("inflate", 0.0F).forGetter(Bone::inflate),
                         Cube.CODEC.listOf().optionalFieldOf("cubes", List.of()).forGetter(Bone::cubes)
@@ -216,8 +217,8 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                 instance.group(
                         CodecUtil.VECTOR3F_CODEC.fieldOf("origin").forGetter(Cube::origin),
                         CodecUtil.VECTOR3F_CODEC.fieldOf("size").forGetter(Cube::size),
-                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("rotation", VECTOR3F_ZERO).forGetter(Cube::rotation),
-                        CodecUtil.VECTOR3F_CODEC.optionalFieldOf("pivot", VECTOR3F_ZERO).forGetter(Cube::pivot),
+                        defaultToZeroCodec("rotation").forGetter(Cube::rotation),
+                        defaultToZeroCodec("pivot").forGetter(Cube::pivot),
                         Codec.FLOAT.optionalFieldOf("inflate", 0.0F).forGetter(Cube::inflate),
                         Codec.BOOL.optionalFieldOf("mirror", false).forGetter(Cube::mirror),
                         FACE_MAP_CODEC.optionalFieldOf("uv", Map.of()).forGetter(Cube::faces)
@@ -285,5 +286,10 @@ public record BedrockGeometry(BedrockVersion formatVersion, List<GeometryDefinit
                         Quadrant.CODEC.optionalFieldOf("uv_rotation", Quadrant.R0).forGetter(Face::uvRotation)
                 ).apply(instance, Face::new)
         );
+    }
+
+    private static MapCodec<Vector3fc> defaultToZeroCodec(String name) {
+        return CodecUtil.VECTOR3F_CODEC.optionalFieldOf(name).xmap(optional -> optional.orElse(VECTOR3F_ZERO),
+                vector -> vector.length() == 0.0F ? Optional.empty() : Optional.of(vector));
     }
 }
