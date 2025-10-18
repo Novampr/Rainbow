@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.block.model.TextureSlots;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.SpriteLoader;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +16,6 @@ import org.geysermc.rainbow.mixin.SpriteContentsAccessor;
 import org.geysermc.rainbow.mixin.SpriteLoaderAccessor;
 import org.geysermc.rainbow.mixin.TextureSlotsAccessor;
 
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,10 +56,12 @@ public record StitchedTextures(Map<String, TextureAtlasSprite> sprites, Supplier
 
     private static Optional<SpriteContents> readSpriteContents(ResourceLocation location, PackContext context) {
         return RainbowIO.safeIO(() -> {
-            try (InputStream textureStream = context.assetResolver().openAsset(Rainbow.decorateTextureLocation(location))) {
-                NativeImage texture = NativeImage.read(textureStream);
-                return new SpriteContents(location, new FrameSize(texture.getWidth(), texture.getHeight()), texture);
+            try (TextureResource texture = context.assetResolver().getBlockTexture(location).orElse(null)) {
+                if (texture != null) {
+                    return new SpriteContents(location, texture.sizeOfFrame(), texture.getFirstFrame(true));
+                }
             }
+            return null;
         });
     }
 

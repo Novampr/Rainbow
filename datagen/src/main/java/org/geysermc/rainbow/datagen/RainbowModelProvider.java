@@ -1,7 +1,7 @@
 package org.geysermc.rainbow.datagen;
 
-import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
@@ -10,6 +10,7 @@ import net.minecraft.client.data.models.model.ModelInstance;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
 import net.minecraft.client.renderer.item.ClientItem;
+import net.minecraft.client.resources.metadata.animation.AnimationMetadataSection;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedModel;
@@ -28,6 +29,7 @@ import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.RainbowIO;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.PackSerializer;
+import org.geysermc.rainbow.mapping.texture.TextureResource;
 import org.geysermc.rainbow.pack.BedrockPack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -196,8 +198,15 @@ public abstract class RainbowModelProvider extends FabricModelProvider {
         }
 
         @Override
-        public InputStream openAsset(ResourceLocation location) throws IOException {
-            return resourceManager.open(location);
+        public Optional<TextureResource> getBlockTexture(ResourceLocation location) {
+            return resourceManager.getResource(Rainbow.decorateTextureLocation(location))
+                    .flatMap(resource -> RainbowIO.safeIO(() -> {
+                        Optional<AnimationMetadataSection> animationMetadata = resource.metadata().getSection(AnimationMetadataSection.TYPE);
+                        try (InputStream textureStream = resource.open()) {
+                            NativeImage texture = NativeImage.read(textureStream);
+                            return new TextureResource(texture, animationMetadata.map(animation -> animation.calculateFrameSize(texture.getWidth(), texture.getHeight())));
+                        }
+                    }));
         }
     }
 }
