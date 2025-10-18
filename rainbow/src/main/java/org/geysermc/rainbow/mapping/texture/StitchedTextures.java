@@ -9,7 +9,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.ResourceLocation;
-import org.geysermc.rainbow.Rainbow;
 import org.geysermc.rainbow.RainbowIO;
 import org.geysermc.rainbow.mapping.PackContext;
 import org.geysermc.rainbow.mixin.SpriteContentsAccessor;

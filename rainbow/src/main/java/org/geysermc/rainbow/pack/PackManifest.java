@@ -58,9 +58,8 @@ public record PackManifest(Header header, List<Module> modules) {
         }
     }
 
-    public static PackManifest create(String name, String description, UUID uuid, BedrockVersion version) {
-        return new PackManifest(new PackManifest.Header(name, description, uuid, version, PackConstants.ENGINE_VERSION),
-                List.of(new PackManifest.Module(name, description, uuid, version)));
+    public static PackManifest create(String name, String description, UUID headerUUID, UUID moduleUUID, BedrockVersion version) {
+        return new PackManifest(new PackManifest.Header(name, description, headerUUID, version, PackConstants.ENGINE_VERSION),
+                List.of(new PackManifest.Module(name, description, moduleUUID, version)));
     }
 }
-

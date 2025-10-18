@@ -283,7 +283,7 @@ public class BedrockPack {
         }
 
         private static PackManifest defaultManifest(String name) {
-            return PackManifest.create(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), BedrockVersion.of(0));
+            return PackManifest.create(name, PackConstants.DEFAULT_PACK_DESCRIPTION, UUID.randomUUID(), UUID.randomUUID(), BedrockVersion.of(0));
         }
     }
 
