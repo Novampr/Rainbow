@@ -18,5 +18,5 @@ public interface AssetResolver {
 
     Optional<EquipmentClientInfo> getEquipmentInfo(ResourceKey<EquipmentAsset> key);
 
-    Optional<TextureResource> getBlockTexture(ResourceLocation location);
+    Optional<TextureResource> getTexture(ResourceLocation atlas, ResourceLocation location);
 }

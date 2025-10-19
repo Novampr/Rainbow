@@ -28,7 +28,7 @@ public class MinecraftPackSerializer implements PackSerializer {
     @Override
     public <T> CompletableFuture<?> saveJson(Codec<T> codec, T object, Path path) {
         DynamicOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, registries);
-        return CompletableFuture.runAsync(() -> RainbowIO.safeIO(() -> CodecUtil.trySaveJson(codec, object, path.resolveSibling(path.getFileName() + ".json"), ops)),
+        return CompletableFuture.runAsync(() -> RainbowIO.safeIO(() -> CodecUtil.trySaveJson(codec, object, path, ops)),
                 Util.backgroundExecutor().forName("PackSerializer-saveJson"));
     }
 

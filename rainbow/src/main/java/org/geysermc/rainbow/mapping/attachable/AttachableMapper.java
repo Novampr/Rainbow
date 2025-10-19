@@ -10,7 +10,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.Equippable;
 import org.geysermc.rainbow.mapping.AssetResolver;
 import org.geysermc.rainbow.mapping.geometry.BedrockGeometryContext;
-import org.geysermc.rainbow.mapping.geometry.MappedGeometry;
 import org.geysermc.rainbow.mapping.texture.TextureHolder;
 import org.geysermc.rainbow.pack.attachable.BedrockAttachable;
 
@@ -34,7 +33,7 @@ public class AttachableMapper {
                         .filter(assetInfo -> !assetInfo.getSecond().isEmpty())
                         .map(assetInfo -> {
                             ResourceLocation equipmentTexture = getTexture(assetInfo.getSecond(), getLayer(assetInfo.getFirst()));
-                            textureConsumer.accept(TextureHolder.createBuiltIn(equipmentTexture));
+                            textureConsumer.accept(TextureHolder.createBuiltIn(null, equipmentTexture));
                             return BedrockAttachable.equipment(bedrockIdentifier, assetInfo.getFirst(), equipmentTexture.getPath());
                         }))
                 .map(attachable -> {

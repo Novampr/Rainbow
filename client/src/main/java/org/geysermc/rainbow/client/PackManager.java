@@ -35,7 +35,7 @@ public final class PackManager {
 
     private static final Path EXPORT_DIRECTORY = FabricLoader.getInstance().getGameDir().resolve(Rainbow.MOD_ID);
     private static final Path PACK_DIRECTORY = Path.of("pack");
-    private static final Path MAPPINGS_FILE = Path.of("geyser_mappings");
+    private static final Path MAPPINGS_FILE = Path.of("geyser_mappings.json");
     private static final Path PACK_ZIP_FILE = Path.of("pack.zip");
     private static final Path REPORT_FILE = Path.of("report.txt");
 

@@ -11,13 +11,17 @@ public record TextureResource(NativeImage texture, Optional<FrameSize> frameSize
         this(texture, texture.getWidth() != width || texture.getHeight() != height ? Optional.of(new FrameSize(width, height)) : Optional.empty());
     }
 
+    public TextureResource(NativeImage texture) {
+        this(texture, Optional.empty());
+    }
+
     public NativeImage getFirstFrame(boolean copy) {
         if (frameSize.isEmpty() && !copy) {
             return texture;
         }
         FrameSize size = sizeOfFrame();
         NativeImage firstFrame = new NativeImage(size.width(), size.height(), false);
-        texture.copyRect(firstFrame, 0, 0, 0, 0, size.width(), size.height(), false, false);
+        firstFrame.copyFrom(texture);
         return firstFrame;
     }
 
