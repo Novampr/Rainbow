@@ -28,6 +28,9 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class RenderedTextureHolder extends TextureHolder {
     private final ItemStack stackToRender;
@@ -53,18 +56,31 @@ public class RenderedTextureHolder extends TextureHolder {
         Objects.requireNonNull(sizeBounds);
         OversizedItemRenderState oversizedRenderState = new OversizedItemRenderState(guiItemRenderState, sizeBounds.left(), sizeBounds.top(), sizeBounds.right() + 4, sizeBounds.bottom() + 4);
 
+        Lock lock = new ReentrantLock();
+        Condition condition = lock.newCondition();
+
         try (OversizedItemRenderer itemRenderer = new OversizedItemRenderer(Minecraft.getInstance().renderBuffers().bufferSource())) {
             //noinspection DataFlowIssue
             ((PictureInPictureCopyRenderer) itemRenderer).rainbow$allowTextureCopy();
             itemRenderer.prepare(oversizedRenderState, new GuiRenderState(), 4);
-            writeAsPNG(serializer, path, ((PictureInPictureRendererAccessor) itemRenderer).getTexture());
+            writeAsPNG(serializer, path, ((PictureInPictureRendererAccessor) itemRenderer).getTexture(), lock, condition);
         }
-        return CompletableFuture.completedFuture(null);
+
+        return CompletableFuture.runAsync(() -> {
+            lock.lock();
+            try {
+                condition.await();
+            } catch (InterruptedException ignored) {
+            } finally {
+                lock.unlock();
+            }
+        });
     }
 
     // Simplified TextureUtil#writeAsPNG with some modifications to flip the image and just generate it at full size
-    private static void writeAsPNG(PackSerializer serializer, Path path, GpuTexture texture) {
+    private static void writeAsPNG(PackSerializer serializer, Path path, GpuTexture texture, Lock lock, Condition condition) {
         RenderSystem.assertOnRenderThread();
+
         int width = texture.getWidth(0);
         int height = texture.getHeight(0);
         int bufferSize = texture.getFormat().pixelSize() * width * height;
@@ -83,12 +99,18 @@ public class RenderedTextureHolder extends TextureHolder {
                             }
                         }
 
-                        serializer.saveTexture(NativeImageUtil.writeToByteArray(image), path);
+                        serializer.saveTexture(NativeImageUtil.writeToByteArray(image), path).join();
+                        lock.lock();
+                        try {
+                            condition.signalAll();
+                        } finally {
+                            lock.unlock();
+                        }
                     }
                 });
+            } finally {
+                buffer.close();
             }
-
-            buffer.close();
         };
         commandEncoder.copyTextureToBuffer(texture, buffer, 0, writer, 0);
     }

@@ -68,11 +68,11 @@ public final class PackManager {
         return currentPack.map(pack -> EXPORT_DIRECTORY.resolve(pack.name()));
     }
 
-    public boolean finish() {
+    public boolean finish(Runnable onFinish) {
         currentPack.map(pack -> {
             RainbowIO.safeIO(() -> Files.writeString(getExportPath().orElseThrow().resolve(REPORT_FILE), createPackSummary(pack)));
             return pack.save();
-        }).ifPresent(CompletableFuture::join);
+        }).ifPresent(future -> future.thenRun(onFinish));
         boolean wasPresent = currentPack.isPresent();
         currentPack = Optional.empty();
         return wasPresent;

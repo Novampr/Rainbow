@@ -134,17 +134,17 @@ public class BedrockPack {
             futures.add(item.save(serializer, paths.attachables(), paths.geometry(), paths.animation(), textureSaver));
         }
 
-        if (paths.zipOutput().isPresent()) {
-            RainbowIO.safeIO(() -> CodecUtil.tryZipDirectory(paths.packRoot(), paths.zipOutput().get()));
-        }
-
         if (reporter instanceof AutoCloseable closeable) {
             try {
                 closeable.close();
             } catch (Exception ignored) {}
         }
 
-        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+        CompletableFuture<?> packSerializingFinished = CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+        if (paths.zipOutput().isPresent()) {
+            return packSerializingFinished.thenAcceptAsync(object -> RainbowIO.safeIO(() -> CodecUtil.tryZipDirectory(paths.packRoot(), paths.zipOutput().get())));
+        }
+        return packSerializingFinished;
     }
 
     public int getMappings() {

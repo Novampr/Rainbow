@@ -48,6 +48,6 @@ public class AnimationMapper {
                 .withAnimation(identifier + ".head", BedrockAnimation.animation()
                         .withLoopMode(BedrockAnimation.LoopMode.LOOP)
                         .withBone(bone, headPosition, headRotation, headScale))
-                .build(), "animation." + identifier + ".hold_first_person", "animation." + identifier + ".hold_third_person", identifier + ".head");
+                .build(), "animation." + identifier + ".hold_first_person", "animation." + identifier + ".hold_third_person", "animation." + identifier + ".head");
     }
 }

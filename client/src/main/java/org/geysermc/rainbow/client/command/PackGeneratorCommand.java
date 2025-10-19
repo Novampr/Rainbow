@@ -113,11 +113,9 @@ public class PackGeneratorCommand {
                 .then(ClientCommandManager.literal("finish")
                         .executes(context -> {
                             Optional<Path> exportPath = packManager.getExportPath();
-                            if (packManager.finish()) {
-                                // TODO error when exporting fails
-                                context.getSource().sendFeedback(Component.translatable("commands.rainbow.pack_finished_successfully")
-                                        .withStyle(style -> style.withUnderlined(true).withClickEvent(new ClickEvent.OpenFile(exportPath.orElseThrow()))));
-                            } else {
+                            Runnable onFinish = () -> context.getSource().sendFeedback(Component.translatable("commands.rainbow.pack_finished_successfully").withStyle(style
+                                    -> style.withUnderlined(true).withClickEvent(new ClickEvent.OpenFile(exportPath.orElseThrow()))));
+                            if (!packManager.finish(onFinish)) {
                                 context.getSource().sendError(NO_PACK_CREATED);
                             }
                             return 0;
