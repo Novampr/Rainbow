@@ -13,15 +13,19 @@ public class AnimationMapper {
 
     // These transformations aren't perfect... but I spent over 4 hours trying to get these. It's good enough for me.
     public static BedrockAnimationContext mapAnimation(String identifier, String bone, ItemTransforms transforms) {
+        // Note that translations are multiplied by 0.0625 after reading on Java, so we have to divide by that here
+
         // I don't think it's possible to display separate animations for left- and right hands
         ItemTransform firstPerson = transforms.firstPersonRightHand();
-        Vector3f firstPersonPosition = FIRST_PERSON_POSITION_OFFSET.add(firstPerson.translation(), new Vector3f());
+        Vector3f firstPersonPosition = firstPerson.translation().div(0.0625F, new Vector3f()).add(FIRST_PERSON_POSITION_OFFSET);
         Vector3f firstPersonRotation = FIRST_PERSON_ROTATION_OFFSET.add(firstPerson.rotation(), new Vector3f());
         Vector3f firstPersonScale = new Vector3f(firstPerson.scale());
 
         ItemTransform thirdPerson = transforms.thirdPersonRightHand();
         // Translation Y/Z axes are swapped on bedrock, bedrock displays the model lower than Java does, and the X/Y axes (Java) is inverted on bedrock
-        Vector3f thirdPersonPosition = new Vector3f(-thirdPerson.translation().x(), 10.0F + thirdPerson.translation().z(), -thirdPerson.translation().y());
+        // Also the model appears lower on bedrock so we need to add 10 on the Y axis here
+        Vector3f thirdPersonTranslation = thirdPerson.translation().div(0.0625F, new Vector3f());
+        Vector3f thirdPersonPosition = new Vector3f(-thirdPersonTranslation.x(), 10.0F + thirdPersonTranslation.z(), -thirdPersonTranslation.y());
         // Rotation X/Y axes are inverted on bedrock, bedrock needs a +90-degree rotation on the X axis, and I couldn't figure out how the Z axis works
         Vector3f thirdPersonRotation = new Vector3f(-thirdPerson.rotation().x() + 90.0F, -thirdPerson.rotation().y(), 0.0F);
         Vector3f thirdPersonScale = new Vector3f(thirdPerson.scale());
@@ -30,7 +34,7 @@ public class AnimationMapper {
         ItemTransform head = transforms.head();
         // Add a base translation of 20 on the Y axis as bedrock displays the item at the player's feet
         // Translation is inverted on the X axis
-        Vector3f headPosition = head.translation().mul(-0.655F, 0.655F, 0.655F, new Vector3f()).add(0.0F, 20.0F, 0.0F);
+        Vector3f headPosition = head.translation().div(0.0625F, new Vector3f()).mul(-0.655F, 0.655F, 0.655F).add(0.0F, 20.0F, 0.0F);
         // Rotation is inverted on the X and Y axis
         Vector3f headRotation = new Vector3f(-head.rotation().x(), -head.rotation().y(), head.rotation().z());
         Vector3f headScale = head.scale().mul(0.655F, new Vector3f());

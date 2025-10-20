@@ -1,7 +1,6 @@
 package org.geysermc.rainbow.pack;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
@@ -44,7 +43,7 @@ public class BedrockPack {
     private final BedrockTextures.Builder itemTextures = BedrockTextures.builder();
     private final Set<BedrockItem> bedrockItems = new HashSet<>();
     private final Set<ResourceLocation> modelsMapped = new HashSet<>();
-    private final IntSet customModelDataMapped = new IntOpenHashSet();
+    private final Set<Pair<Item, Integer>> customModelDataMapped = new HashSet<>();
 
     private final PackContext context;
     private final ProblemReporter reporter;
@@ -95,7 +94,7 @@ public class BedrockPack {
             CustomModelData customModelData = stack.get(DataComponents.CUSTOM_MODEL_DATA);
             Float firstNumber;
             if (customModelData == null || (firstNumber = customModelData.getFloat(0)) == null
-                    || !customModelDataMapped.add((firstNumber.intValue()))) {
+                    || !customModelDataMapped.add(Pair.of(stack.getItem(), firstNumber.intValue()))) {
                 return MappingResult.NONE_MAPPED;
             }
 
