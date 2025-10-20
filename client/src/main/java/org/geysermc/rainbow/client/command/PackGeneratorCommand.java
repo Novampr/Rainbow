@@ -8,16 +8,12 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
 import org.geysermc.rainbow.client.PackManager;
 import org.geysermc.rainbow.client.PackManagerUtils;
 import org.geysermc.rainbow.client.mapper.InventoryMapper;
 import org.geysermc.rainbow.client.mapper.PackMapper;
 import org.geysermc.rainbow.pack.BedrockPack;
 
-import java.nio.file.Path;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 
 public class PackGeneratorCommand {

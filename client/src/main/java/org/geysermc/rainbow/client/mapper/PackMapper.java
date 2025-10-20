@@ -7,7 +7,6 @@ import net.minecraft.network.chat.Component;
 import org.geysermc.rainbow.client.PackManager;
 import org.geysermc.rainbow.client.screen.ManagePackScreen;
 import org.geysermc.rainbow.pack.BedrockPack;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 

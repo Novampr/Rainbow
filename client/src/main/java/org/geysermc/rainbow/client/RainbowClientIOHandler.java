@@ -2,7 +2,6 @@ package org.geysermc.rainbow.client;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import org.geysermc.rainbow.RainbowIO;
 

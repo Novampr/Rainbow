@@ -9,10 +9,6 @@ public abstract class BaseScreen extends Screen {
 
     protected Component renderTitle;
 
-    protected BaseScreen(Component title) {
-        this(title, null);
-    }
-
     protected BaseScreen(Component title, Runnable onClose) {
         super(title);
         this.renderTitle = title;

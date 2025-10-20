@@ -4,13 +4,10 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.contents.objects.AtlasSprite;
-import net.minecraft.resources.ResourceLocation;
 import org.geysermc.rainbow.client.PackManagerUtils;
 import org.geysermc.rainbow.client.RainbowClient;
 import org.geysermc.rainbow.client.screen.CreatePackScreen;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -19,12 +16,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Mixin(AbstractContainerScreen.class)
 public abstract class AbstractContainerScreenMixin extends Screen {
-    @Shadow
-    protected int leftPos;
-
-    @Shadow
-    protected int topPos;
-
     protected AbstractContainerScreenMixin(Component title) {
         super(title);
     }
@@ -50,6 +41,6 @@ public abstract class AbstractContainerScreenMixin extends Screen {
                         ));
                     }
                 }
-        ).bounds(5, 5, 98, 20).build());
+        ).bounds(5, 5, 74, 20).build());
     }
 }
